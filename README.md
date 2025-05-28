@@ -19,7 +19,7 @@ In this install we fix the python version to be 3.12 to avoid bad package intera
 Next, we install the requirements in `requirements.txt` using the line:
 
 ```
-pip install --file "requirements.txt"
+pip install -r "requirements.txt"
 ```
 
 Finally, you need to ensure that the ipopt solver is properly configured. If you wish to use more sophisticated HSL solvers from the coin-or project, we recommend getting them through the `idaes-pse` package using the following instructions in command line:
