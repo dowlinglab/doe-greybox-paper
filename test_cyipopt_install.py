@@ -1,23 +1,31 @@
 import pyomo.environ as pyo
 
-from pyomo.contrib.pynumero.interfaces.external_grey_box import ExternalGreyBoxModel, ExternalGreyBoxBlock
+from pyomo.contrib.pynumero.interfaces.external_grey_box import (
+    ExternalGreyBoxModel,
+    ExternalGreyBoxBlock,
+)
+
+from pyomo.common.dependencies import numpy as np, scipy
 
 import warnings
+
 try:
     import idaes
 except:
     warnings.warn("Failed to import idaes. Ensure IPOPT is installed properly.")
 
+
 class simpleExternalGreyBox(ExternalGreyBoxModel):
-    def __init__(self, ):
-        self._n_inputs = 1
-    
+    def __init__(self):
+        self._n_inputs = 2
+        self._input_values = np.zeros(self._n_inputs)
+
     def input_names(self):
         # Cartesian product gives us matrix indices flattened in row-first format
         # Can use itertools.combinations(self._param_names, 2) with added
         # diagonal elements, or do double for loops if we switch to upper triangular
         # input_names_list = list(itertools.product(self._param_names, self._param_names))
-        input_names_list = ['x_in', ]
+        input_names_list = ['x1_in', 'x2_in']
         return input_names_list
 
     def output_names(self):
@@ -26,7 +34,7 @@ class simpleExternalGreyBox(ExternalGreyBoxModel):
         # the ObjectiveLib Enum object, which should have an associated
         # name for the objective function at all times.
         obj_name = 'x_out'
-        return [obj_name, ]
+        return [obj_name]
 
     def set_input_values(self, input_values):
         # Set initial values to be flattened initial FIM (aligns with input names)
@@ -38,16 +46,20 @@ class simpleExternalGreyBox(ExternalGreyBoxModel):
         return None
 
     def evaluate_outputs(self):
-        obj_value = self._input_values
+        input_values = self._input_values
+
+        obj_value = (input_values[0] - 2) ** 2 + (input_values[1] - 5) ** 2
         return np.asarray([obj_value], dtype=np.float64)
 
     def finalize_block_construction(self, pyomo_block):
         # Set bounds on the inputs/outputs
         # Set initial values of the inputs/outputs
         # This will depend on the objective used
-        pyomo_block.inputs["x_in"] = 1
-        pyomo_block.inputs["x_in"].lb = 0
-        
+        pyomo_block.inputs["x1_in"] = 1
+        pyomo_block.inputs["x1_in"].lb = 0
+        pyomo_block.inputs["x2_in"] = 1
+        pyomo_block.inputs["x2_in"].lb = 0
+
         pyomo_block.outputs["x_out"] = 1
 
     def evaluate_jacobian_equality_constraints(self):
@@ -57,11 +69,14 @@ class simpleExternalGreyBox(ExternalGreyBoxModel):
         return None
 
     def evaluate_jacobian_outputs(self):
-        M_rows = [1,]
-        M_cols = [1,]
-        
-        return coo_matrix(
-            (1, (M_rows, M_cols)), shape=(1, 1)
+        input_values = self._input_values
+
+        M_rows = [0, 0]
+        M_cols = [0, 1]
+
+        return scipy.sparse.coo_matrix(
+            ([2 * (input_values[0] - 2), 2 * (input_values[1] - 5)], (M_rows, M_cols)),
+            shape=(1, self._n_inputs),
         )
 
     # Beyond here is for Hessian information
@@ -85,46 +100,74 @@ class simpleExternalGreyBox(ExternalGreyBoxModel):
         return None
 
     def evaluate_hessian_outputs(self, FIM=None):
-        hess_rows = [1, ]
-        hess_cols = [1, ]
-        return coo_matrix(
-            (0, (hess_rows, hess_cols)),
-            shape=(self._n_inputs, self._n_inputs),
-        )    
+        hess_rows = [0, 1]
+        hess_cols = [0, 1]
+
+        return scipy.sparse.coo_matrix(
+            ([2, 2], (hess_rows, hess_cols)), shape=(self._n_inputs, self._n_inputs)
+        )
+
 
 def create_trivial_problem():
     m = pyo.ConcreteModel()
-    
-    m.x = pyo.Var(initialize=1, bounds=(0, 10))
-    
+
+    m.x1 = pyo.Var(initialize=1, bounds=(0, 10))
+    m.x2 = pyo.Var(initialize=1, bounds=(0, 10))
+
     trivial_gb_model = simpleExternalGreyBox()
-    print("Made the EGB object.")
     m.egb_simple_block = ExternalGreyBoxBlock(external_model=trivial_gb_model)
-    
-    m.x_con = pyo.Constraint(expr=m.x - m.egb_simple_block.inputs["x_in"]==0)
-    
+
+    m.x1_con = pyo.Constraint(expr=m.x1 - m.egb_simple_block.inputs["x1_in"] == 0)
+    m.x2_con = pyo.Constraint(expr=m.x2 - m.egb_simple_block.inputs["x2_in"] == 10)
+
     m.obj = pyo.Objective(expr=m.egb_simple_block.outputs["x_out"], sense=pyo.minimize)
-    
+
     return m
-    
+
+
+warnings.catch_warnings()
+
+cyipopt_works_with_mumps = False
+cyipopt_works_with_ma57 = False
 # Try to solve a simple problem with MUMPS
 try:
     m = create_trivial_problem()
-    print("Made the problem.")
     solver = pyo.SolverFactory("cyipopt")
     solver.config.options["linear_solver"] = "mumps"
-    solver.solve(m, tee=True)
-    print("Test using MUMPS with IPOPT passed")
+    solver.solve(m, tee=False)
+    cyipopt_works_with_mumps = True
 except:
     warnings.warn("FAILED - IPOPT solve with MUMPS")
-    
+
 # Try to solve a simple problem using ma57
 try:
     m = create_trivial_problem()
-    print("Made the problem.")
     solver = pyo.SolverFactory("cyipopt")
     solver.config.options["linear_solver"] = "ma57"
-    solver.solve(m, tee=True)
-    print("Test using MA57 with IPOPT passed")
+    solver.solve(m, tee=False)
+    cyipopt_works_with_ma57 = True
 except:
     warnings.warn("FAILED - IPOPT solve with MA57")
+
+# Summary
+print("\n\n" + "~" * 30 + "\nSummary of Testing Cyipopt\n" + "~" * 30 + "\n")
+
+if cyipopt_works_with_mumps:
+    print("PASSED - IPOPT solve with MUMPS")
+else:
+    print("FAILED - IPOPT solve with MUMPS")
+
+if cyipopt_works_with_ma57:
+    print("PASSED - IPOPT solve with MA57")
+else:
+    print("FAILED - IPOPT solve with MA57")
+
+# Summarize all tests
+total_passes = cyipopt_works_with_ma57 + cyipopt_works_with_mumps
+
+if total_passes == 2:
+    print("All tests passed")
+elif total_passes > 0:
+    print("Some tests passed, but not all.")
+else:
+    print("ALL TESTS FAILED, ENSURE CYIPOPT IS CONFIGURED PROPERLY.")
