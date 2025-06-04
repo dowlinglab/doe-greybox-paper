@@ -53,31 +53,25 @@ class LinearControlExperiment(Experiment):
 
         m = self.model = pyo.ConcreteModel()
 
-        # Model parameters
-        m.R = pyo.Param(mutable=False, initialize=8.314)
-
         # Define model variables
         ########################
         # time
         m.t = ContinuousSet(bounds=[0, 1])
 
-        # Concentrations
-        m.CA = pyo.Var(m.t, within=pyo.NonNegativeReals)
-        m.CB = pyo.Var(m.t, within=pyo.NonNegativeReals)
-        m.CC = pyo.Var(m.t, within=pyo.NonNegativeReals)
+        # States
+        m.x1 = pyo.Var(m.t)
+        m.x2 = pyo.Var(m.t)
 
-        # Temperature
-        m.T = pyo.Var(m.t, within=pyo.NonNegativeReals)
+        # Control action variable
+        m.u = pyo.Var(m.t)
 
-        # Arrhenius rate law equations
-        m.A1 = pyo.Var(within=pyo.NonNegativeReals)
-        m.E1 = pyo.Var(within=pyo.NonNegativeReals)
-        m.A2 = pyo.Var(within=pyo.NonNegativeReals)
-        m.E2 = pyo.Var(within=pyo.NonNegativeReals)
+        # Linear system unknown parameters
+        m.A1 = pyo.Var(bounds=(-10, 10))
+        m.A2 = pyo.Var(bounds=(-10, 10))
 
         # Differential variables (Conc.)
-        m.dCAdt = DerivativeVar(m.CA, wrt=m.t)
-        m.dCBdt = DerivativeVar(m.CB, wrt=m.t)
+        m.dx1dt = DerivativeVar(m.x1, wrt=m.t)
+        m.dx2dt = DerivativeVar(m.x2, wrt=m.t)
 
         ########################
         # End variable def.
@@ -85,29 +79,14 @@ class LinearControlExperiment(Experiment):
         # Equation definition
         ########################
 
-        # Expression for rate constants
-        @m.Expression(m.t)
-        def k1(m, t):
-            return m.A1 * pyo.exp(-m.E1 * 1000 / (m.R * m.T[t]))
-
-        @m.Expression(m.t)
-        def k2(m, t):
-            return m.A2 * pyo.exp(-m.E2 * 1000 / (m.R * m.T[t]))
-
-        # Concentration odes
+        # State odes
         @m.Constraint(m.t)
-        def CA_rxn_ode(m, t):
-            return m.dCAdt[t] == -m.k1[t] * m.CA[t]
+        def x1_ode(m, t):
+            return m.dx1dt[t] == m.A1 * m.x1[t] - m.x2[t]
 
         @m.Constraint(m.t)
-        def CB_rxn_ode(m, t):
-            return m.dCBdt[t] == m.k1[t] * m.CA[t] - m.k2[t] * m.CB[t]
-
-        # algebraic balance for concentration of C
-        # Valid because the reaction system (A --> B --> C) is equimolar
-        @m.Constraint(m.t)
-        def CC_balance(m, t):
-            return m.CA[0] == m.CA[t] + m.CB[t] + m.CC[t]
+        def x2_ode(m, t):
+            return m.dx2dt[t] == m.A2 * m.x2[t] + m.u[t]
 
         ########################
         # End equation definition
@@ -128,8 +107,8 @@ class LinearControlExperiment(Experiment):
         control_points = self.data["control_points"]
 
         # Set initial concentration values for the experiment
-        m.CA[0].value = self.data["CA0"]
-        m.CB[0].fix(self.data["CB0"])
+        m.CA[0].value = self.data["x1_0"]
+        m.CB[0].fix(self.data["x2_0"])
 
         # Update model time `t` with time range and control time points
         m.t.update(self.data["t_range"])
@@ -138,12 +117,6 @@ class LinearControlExperiment(Experiment):
         # Fix the unknown parameter values
         m.A1.fix(self.data["A1"])
         m.A2.fix(self.data["A2"])
-        m.E1.fix(self.data["E1"])
-        m.E2.fix(self.data["E2"])
-
-        # Add upper and lower bounds to the design variable, CA[0]
-        m.CA[0].setlb(self.data["CA_bounds"][0])
-        m.CA[0].setub(self.data["CA_bounds"][1])
 
         m.t_control = control_points
 
@@ -156,10 +129,10 @@ class LinearControlExperiment(Experiment):
         for t in m.t:
             if t in control_points:
                 cv = control_points[t]
-                m.T[t].fix()
-            m.T[t].setlb(self.data["T_bounds"][0])
-            m.T[t].setub(self.data["T_bounds"][1])
-            m.T[t] = cv
+                m.u[t].fix()
+            m.u[t].setlb(self.data["u_bounds"][0])
+            m.u[t].setub(self.data["u_bounds"][1])
+            m.u[t] = cv
 
         # Make a constraint that holds temperature constant between control time points
         @m.Constraint(m.t - control_points)
