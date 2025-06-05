@@ -69,7 +69,7 @@ class LinearControlExperiment(Experiment):
         m.A1 = pyo.Var(bounds=(-10, 10))
         m.A2 = pyo.Var(bounds=(-10, 10))
 
-        # Differential variables (Conc.)
+        # Differential variables (states)
         m.dx1dt = DerivativeVar(m.x1, wrt=m.t)
         m.dx2dt = DerivativeVar(m.x2, wrt=m.t)
 
@@ -136,12 +136,12 @@ class LinearControlExperiment(Experiment):
 
         # Make a constraint that holds temperature constant between control time points
         @m.Constraint(m.t - control_points)
-        def T_control(m, t):
+        def u_control(m, t):
             """
             Piecewise constant temperature between control points
             """
             neighbour_t = max(tc for tc in control_points if tc < t)
-            return m.T[t] == m.T[neighbour_t]
+            return m.u[t] == m.u[neighbour_t]
 
         #########################
         # End model finalization
@@ -155,35 +155,32 @@ class LinearControlExperiment(Experiment):
 
         # Set measurement labels
         m.experiment_outputs = pyo.Suffix(direction=pyo.Suffix.LOCAL)
-        # Add CA to experiment outputs
-        m.experiment_outputs.update((m.CA[t], None) for t in m.t_control)
-        # Add CB to experiment outputs
-        m.experiment_outputs.update((m.CB[t], None) for t in m.t_control)
-        # Add CC to experiment outputs
-        m.experiment_outputs.update((m.CC[t], None) for t in m.t_control)
+        # Add x1 to experiment outputs
+        m.experiment_outputs.update((m.x1[t], None) for t in m.t_control)
+        # Add x2 to experiment outputs
+        m.experiment_outputs.update((m.x2[t], None) for t in m.t_control)
 
         # Adding error for measurement values (assuming no covariance and constant error for all measurements)
         m.measurement_error = pyo.Suffix(direction=pyo.Suffix.LOCAL)
-        concentration_error = 1e-2  # Error in concentration measurement
+        state_error = 1e-3  # Error in x1, x2 measurement
         # Add measurement error for CA
-        m.measurement_error.update((m.CA[t], concentration_error) for t in m.t_control)
+        m.measurement_error.update((m.x1[t], state_error) for t in m.t_control)
         # Add measurement error for CB
-        m.measurement_error.update((m.CB[t], concentration_error) for t in m.t_control)
-        # Add measurement error for CC
-        m.measurement_error.update((m.CC[t], concentration_error) for t in m.t_control)
+        m.measurement_error.update((m.x2[t], state_error) for t in m.t_control)
 
         # Identify design variables (experiment inputs) for the model
         m.experiment_inputs = pyo.Suffix(direction=pyo.Suffix.LOCAL)
         # Add experimental input label for initial concentration
-        m.experiment_inputs[m.CA[m.t.first()]] = None
+        m.experiment_inputs[m.x1[m.t.first()]] = None
+        # Add experimental input label for initial concentration
+        m.experiment_inputs[m.x2[m.t.first()]] = None
         # Add experimental input label for Temperature
-        m.experiment_inputs[m.T[m.t.first()]] = None
-        # m.experiment_inputs.update((m.T[t], None) for t in m.t_control)
+        m.experiment_inputs.update((m.u[t], None) for t in m.t_control)
 
         # Add unknown parameter labels
         m.unknown_parameters = pyo.Suffix(direction=pyo.Suffix.LOCAL)
         # Add labels to all unknown parameters with nominal value as the value
-        m.unknown_parameters.update((k, pyo.value(k)) for k in [m.A1, m.A2, m.E1, m.E2])
+        m.unknown_parameters.update((k, pyo.value(k)) for k in [m.A1, m.A2])
 
         #########################
         # End model labeling
