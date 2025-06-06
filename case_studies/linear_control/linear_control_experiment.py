@@ -59,8 +59,8 @@ class LinearControlExperiment(Experiment):
         m.t = ContinuousSet(bounds=[0, 1])
 
         # States
-        m.x1 = pyo.Var(m.t)
-        m.x2 = pyo.Var(m.t)
+        m.x1 = pyo.Var(m.t, bounds=(-10, 10))
+        m.x2 = pyo.Var(m.t, bounds=(-10, 10))
 
         # Control action variable
         m.u = pyo.Var(m.t)
@@ -106,9 +106,9 @@ class LinearControlExperiment(Experiment):
         # Unpacking data before simulation
         control_points = self.data["control_points"]
 
-        # Set initial concentration values for the experiment
-        m.CA[0].value = self.data["x1_0"]
-        m.CB[0].fix(self.data["x2_0"])
+        # Set initial concentration states for the experiment
+        m.x1[0].fix(self.data["x1_0"])
+        m.x2[0].fix(self.data["x2_0"])
 
         # Update model time `t` with time range and control time points
         m.t.update(self.data["t_range"])
@@ -163,18 +163,18 @@ class LinearControlExperiment(Experiment):
         # Adding error for measurement values (assuming no covariance and constant error for all measurements)
         m.measurement_error = pyo.Suffix(direction=pyo.Suffix.LOCAL)
         state_error = 1e-3  # Error in x1, x2 measurement
-        # Add measurement error for CA
+        # Add measurement error for x1
         m.measurement_error.update((m.x1[t], state_error) for t in m.t_control)
-        # Add measurement error for CB
+        # Add measurement error for x2
         m.measurement_error.update((m.x2[t], state_error) for t in m.t_control)
 
         # Identify design variables (experiment inputs) for the model
         m.experiment_inputs = pyo.Suffix(direction=pyo.Suffix.LOCAL)
-        # Add experimental input label for initial concentration
+        # Add experimental input label for state 1
         m.experiment_inputs[m.x1[m.t.first()]] = None
-        # Add experimental input label for initial concentration
+        # Add experimental input label for state 2
         m.experiment_inputs[m.x2[m.t.first()]] = None
-        # Add experimental input label for Temperature
+        # Add experimental input label for control action
         m.experiment_inputs.update((m.u[t], None) for t in m.t_control)
 
         # Add unknown parameter labels
