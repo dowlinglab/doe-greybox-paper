@@ -1,18 +1,3 @@
-#  ___________________________________________________________________________
-#
-#  Pyomo: Python Optimization Modeling Objects
-#  Copyright (c) 2008-2025
-#  National Technology and Engineering Solutions of Sandia, LLC
-#  Under the terms of Contract DE-NA0003525 with National Technology and
-#  Engineering Solutions of Sandia, LLC, the U.S. Government retains certain
-#  rights in this software.
-#  This software is distributed under the 3-clause BSD License.
-#  ___________________________________________________________________________
-"""
-Rooney Biegler model, based on Rooney, W. C. and Biegler, L. T. (2001). Design for
-model parameter uncertainty using nonlinear confidence regions. AIChE Journal,
-47(8), 1794-1804.
-"""
 from pyomo.common.dependencies import numpy as np, pathlib
 
 from pyomo.contrib.doe.examples.rooney_biegler_experiment import (
@@ -20,16 +5,35 @@ from pyomo.contrib.doe.examples.rooney_biegler_experiment import (
 )
 from pyomo.contrib.doe import DesignOfExperiments
 
+import pyomo.contrib.parmest.parmest as parmest
+
 import pyomo.environ as pyo
 
 import matplotlib.pyplot as plt
 import json
 import sys
 
+def rooney_biegler_parameter_estimation():
+    # Full data from the Bates and Watts example
+    data = [[1, 8.3], [7, 19.8], [2, 10.3], [5, 15.6], [3, 19.0], [4, 16.0]]
+
+    experiments = []
+    for i in range(int(sys.argv[1])):
+        experiments.append(RooneyBieglerExperimentDoE(data={'hour': data[i][0], 'y': data[i][1]}))
+
+    pest = parmest.Estimator(experiments, obj_function="SSE")
+
+    obj, theta = pest.theta_est(calc_cov=False)
+
+    return theta
+
 
 def rooney_biegler_sensitivity():
-    # Create a RooneyBiegler Experiment
-    experiment = RooneyBieglerExperimentDoE(data={'hour': 10, 'y': 22})
+    # Gather preliminary estimate of coefficients with n experiments
+    theta = rooney_biegler_parameter_estimation()
+
+    # Create a RooneyBiegler Experiment, pass the theta estimate there
+    experiment = RooneyBieglerExperimentDoE(data={'hour': 10, 'y': 22}, theta=theta)
 
     # Use a central difference, with step size 1e-3
     fd_formula = "central"
@@ -43,7 +47,7 @@ def rooney_biegler_sensitivity():
     FIM_prior = np.zeros((2, 2))
     # Calculate prior using existing experiments
     for i in range(len(data)):
-        if i > int(sys.argv[1]):
+        if i >= int(sys.argv[1]):
             break
         prev_experiment = RooneyBieglerExperimentDoE(
             data={'hour': data[i][0], 'y': data[i][1]}
@@ -156,7 +160,9 @@ def rooney_biegler_sensitivity():
 
     plt.tight_layout()
     # plt.show()
-    plt.savefig("Rooney_Biegler_Comparison.png", format="png", dpi=450)
+    plt.savefig("Rooney_Biegler_Comparison_{}.png".format(int(sys.argv[1])), format="png", dpi=450)
+
+    return ax
 
 
 if __name__ == "__main__":
