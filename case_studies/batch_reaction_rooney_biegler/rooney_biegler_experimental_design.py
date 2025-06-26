@@ -21,7 +21,7 @@ def run_greybox_optimization():
     theta = rooney_biegler_parameter_estimation()
 
     # Create a RooneyBiegler Experiment, pass the theta estimate there
-    experiment = RooneyBieglerExperimentDoE(data={'hour': 10, 'y': 22}, theta=theta)
+    experiment = RooneyBieglerExperimentDoE(data={'hour': 1.78, 'y': 15}, theta=theta)
 
     # Use a central difference, with step size 1e-3
     fd_formula = "central"
@@ -57,8 +57,6 @@ def run_greybox_optimization():
         FIM_prior[1][1] += 1e-6
 
     # Compute new FIM calculation for a range of time values
-    experiment = RooneyBieglerExperimentDoE(data={'hour': 5, 'y': 15})
-
     objective_options = ["determinant",
                          "trace",
                          "minimum_eigenvalue",
@@ -67,7 +65,20 @@ def run_greybox_optimization():
     optimal_points = []
     optimal_objective_value = 0
 
+    # Define our own grey box solver
+    grey_box_solver = pyo.SolverFactory("cyipopt")
+    grey_box_solver.config.options["hessian_approximation"] = "limited-memory"
+    grey_box_solver.config.options["linear_solver"] = "ma27"
+    grey_box_solver.config.options['mu_strategy'] = "monotone"
+
+    try_things = {"determinant": 1.78,
+                  "trace": 1.32,
+                  "minimum_eigenvalue": 1.32,
+                  "condition_number": 0.88}
+
     for objective_option in objective_options:
+        experiment = RooneyBieglerExperimentDoE(data={'hour': try_things[objective_option], 'y': 15})
+
         doe_obj_gb = DesignOfExperiments(
             experiment,
             fd_formula=fd_formula,
@@ -82,6 +93,8 @@ def run_greybox_optimization():
             L_diagonal_lower_bound=1e-7,
             solver=None,
             tee=False,
+            grey_box_solver=grey_box_solver,
+            grey_box_tee=True,
             get_labeled_model_args=None,
             _Cholesky_option=True,
             _only_compute_fim_lower=True,
@@ -90,6 +103,30 @@ def run_greybox_optimization():
         doe_obj_gb.run_doe()
 
         if objective_option == "determinant":
+            doe_obj_nongb = DesignOfExperiments(
+                experiment,
+                fd_formula=fd_formula,
+                step=step_size,
+                objective_option=objective_option,
+                scale_constant_value=1,
+                scale_nominal_param_value=scale_nominal_param_value,
+                prior_FIM=FIM_prior,
+                jac_initial=None,
+                fim_initial=None,
+                L_diagonal_lower_bound=1e-7,
+                solver=None,
+                tee=False,
+                get_labeled_model_args=None,
+                _Cholesky_option=True,
+                _only_compute_fim_lower=True,
+            )
+            doe_obj_nongb.run_doe()
+            regular_doe = [float(doe_obj_nongb.results["Experiment Design"][0]),
+                           np.log(np.linalg.det(doe_obj_nongb.results["FIM"]))]
+            # print(float(doe_obj_nongb.results["Experiment Design"][0]))
+            # print(np.log(np.linalg.det(doe_obj_nongb.results["FIM"])))
+            doe_obj_gb.model.obj_cons.egb_fim_block.pprint()
+            print(doe_obj_nongb.results["FIM"])
             optimal_objective_value = np.log(np.linalg.det(doe_obj_gb.results["FIM"]))
         elif objective_option == "trace":
             optimal_objective_value = np.trace(np.linalg.inv(doe_obj_gb.results["FIM"]))
@@ -101,9 +138,12 @@ def run_greybox_optimization():
             optimal_objective_value = np.linalg.cond(doe_obj_gb.results["FIM"])
         optimal_points.append([float(doe_obj_gb.results["Experiment Design"][0]), float(optimal_objective_value)])
 
+    print(optimal_points)
+
     ax = rooney_biegler_sensitivity()
 
     ax[0, 0].plot(optimal_points[0][0], optimal_points[0][1], marker='*', color='gold', ms=20)
+    ax[0, 0].plot(regular_doe[0], regular_doe[1], marker='*', color='blue', ms=20)
     ax[0, 1].plot(optimal_points[2][0], optimal_points[2][1], marker='*', color='gold', ms=20)
     ax[1, 0].plot(optimal_points[3][0], optimal_points[3][1], marker='*', color='gold', ms=20)
     ax[1, 1].plot(optimal_points[1][0], optimal_points[1][1], marker='*', color='gold', ms=20)
