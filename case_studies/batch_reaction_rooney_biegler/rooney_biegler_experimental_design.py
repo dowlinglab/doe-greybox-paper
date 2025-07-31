@@ -13,7 +13,10 @@ import matplotlib.pyplot as plt
 import json
 import sys
 
-from rooney_biegler_comparison import rooney_biegler_sensitivity, rooney_biegler_parameter_estimation
+from rooney_biegler_comparison import (
+    rooney_biegler_sensitivity,
+    rooney_biegler_parameter_estimation,
+)
 
 
 def run_greybox_optimization():
@@ -57,10 +60,10 @@ def run_greybox_optimization():
         FIM_prior[1][1] += 1e-6
 
     # Compute new FIM calculation for a range of time values
-    objective_options = ["determinant",]
-                         # "trace",
-                         # "minimum_eigenvalue",
-                         # "condition_number"]
+    objective_options = ["determinant"]
+    # "trace",
+    # "minimum_eigenvalue",
+    # "condition_number"]
 
     optimal_points = []
     optimal_objective_value = 0
@@ -71,13 +74,17 @@ def run_greybox_optimization():
     grey_box_solver.config.options["linear_solver"] = "ma27"
     grey_box_solver.config.options['mu_strategy'] = "monotone"
 
-    try_things = {"determinant": 1.78, # 1.78 for optimal
-                  "trace": 1.32,
-                  "minimum_eigenvalue": 1.32,
-                  "condition_number": 0.88}
+    try_things = {
+        "determinant": 1.78,  # 1.78 for optimal
+        "trace": 1.32,
+        "minimum_eigenvalue": 1.32,
+        "condition_number": 0.88,
+    }
 
     for objective_option in objective_options:
-        experiment = RooneyBieglerExperimentDoE(data={'hour': try_things[objective_option], 'y': 15})
+        experiment = RooneyBieglerExperimentDoE(
+            data={'hour': try_things[objective_option], 'y': 15}
+        )
 
         doe_obj_gb = DesignOfExperiments(
             experiment,
@@ -121,16 +128,18 @@ def run_greybox_optimization():
                 _only_compute_fim_lower=True,
             )
             doe_obj_nongb.run_doe()
-            regular_doe = [float(doe_obj_nongb.results["Experiment Design"][0]),
-                           np.log(np.linalg.det(doe_obj_nongb.results["FIM"]))]
+            regular_doe = [
+                float(doe_obj_nongb.results["Experiment Design"][0]),
+                np.log(np.linalg.det(doe_obj_nongb.results["FIM"])),
+            ]
             # print(float(doe_obj_nongb.results["Experiment Design"][0]))
             # print(np.log(np.linalg.det(doe_obj_nongb.results["FIM"])))
-            print("\n\nStandard Model" + "~"*20 + "\n\n")
+            print("\n\nStandard Model" + "~" * 20 + "\n\n")
             doe_obj_nongb.model.pprint()
-            print("\n\nGREYBOX Model" + "~"*20 + "\n\n")
+            print("\n\nGREYBOX Model" + "~" * 20 + "\n\n")
             doe_obj_gb.model.pprint()
             print("\n\n")
-            #doe_obj_gb.model.obj_cons.egb_fim_block.pprint()
+            # doe_obj_gb.model.obj_cons.egb_fim_block.pprint()
             print("NON-GB FIM")
             print(doe_obj_nongb.results["FIM"])
             optimal_objective_value = np.log(np.linalg.det(doe_obj_gb.results["FIM"]))
@@ -139,7 +148,10 @@ def run_greybox_optimization():
             # doe_obj_gb.model.scenario_blocks[0].hour.setlb(None)
             # doe_obj_gb.model.scenario_blocks[0].hour.setub(None)
             # KKT debugging
-            from pyomo.contrib.pynumero.interfaces.pyomo_grey_box_nlp import PyomoNLPWithGreyBoxBlocks
+            from pyomo.contrib.pynumero.interfaces.pyomo_grey_box_nlp import (
+                PyomoNLPWithGreyBoxBlocks,
+            )
+
             doe_obj_gb.model._obj.deactivate()
             nlp = PyomoNLPWithGreyBoxBlocks(doe_obj_gb.model)
             nlp2 = doe_obj_gb.nlp
@@ -147,13 +159,15 @@ def run_greybox_optimization():
             # Grab standard NLP
             from pyomo.contrib.pynumero.examples.sqp import sqp, load_solution
             from pyomo.contrib.pynumero.linalg.ma27_interface import MA27
+
             linear_solver = MA27()
             linear_solver.set_cntl(1, 1e-6)  # pivot tolerance
-            #sqp(nlp, linear_solver)
+            # sqp(nlp, linear_solver)
             print(nlp.get_primals())
             print(nlp.evaluate_jacobian().toarray())
 
             from pyomo.contrib.pynumero.sparse import BlockVector, BlockMatrix
+
             z = BlockVector(2)
             z.set_block(0, nlp.get_primals())
             z.set_block(1, nlp.get_duals())
@@ -173,12 +187,12 @@ def run_greybox_optimization():
             print(nlp.evaluate_jacobian().transpose() * z.get_block(1))
             print(nlp2.evaluate_jacobian().transpose() * z2.get_block(1))
             grad_lag = (
-                    nlp.evaluate_grad_objective()
-                    + nlp.evaluate_jacobian().transpose() * z.get_block(1)
+                nlp.evaluate_grad_objective()
+                + nlp.evaluate_jacobian().transpose() * z.get_block(1)
             )
             grad_lag2 = (
-                    nlp2.evaluate_grad_objective()
-                    + nlp2.evaluate_jacobian().transpose() * z2.get_block(1)
+                nlp2.evaluate_grad_objective()
+                + nlp2.evaluate_jacobian().transpose() * z2.get_block(1)
             )
             print("DUAL INFEASIBILITY")
             print(grad_lag)
@@ -212,7 +226,12 @@ def run_greybox_optimization():
             optimal_objective_value = min_eig
         elif objective_option == "condition_number":
             optimal_objective_value = np.linalg.cond(doe_obj_gb.results["FIM"])
-        optimal_points.append([float(doe_obj_gb.results["Experiment Design"][0]), float(optimal_objective_value)])
+        optimal_points.append(
+            [
+                float(doe_obj_gb.results["Experiment Design"][0]),
+                float(optimal_objective_value),
+            ]
+        )
 
     print(optimal_points)
 

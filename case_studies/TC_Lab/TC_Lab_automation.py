@@ -1,8 +1,6 @@
 from pyomo.common.dependencies import numpy as np, pathlib
 
-from linear_control_experiment import (
-    LinearControlExperiment,
-)
+from linear_control_experiment import LinearControlExperiment
 
 from pyomo.contrib.doe import DesignOfExperiments
 
@@ -111,15 +109,11 @@ def run_linear_control_experiment():
     # Print out a results summary
     print("Optimal experiment values: ")
     print(
-        "\tInitial x1 value: {:.2f}".format(
-            doe_obj_2.results["Experiment Design"][0]
-        )
+        "\tInitial x1 value: {:.2f}".format(doe_obj_2.results["Experiment Design"][0])
     )
     print("Optimal experiment values: ")
     print(
-        "\tInitial x2 value: {:.2f}".format(
-            doe_obj_2.results["Experiment Design"][1]
-        )
+        "\tInitial x2 value: {:.2f}".format(doe_obj_2.results["Experiment Design"][1])
     )
     print(
         ("\tTemperature values: [" + "{:.2f}, " * 8 + "{:.2f}]").format(

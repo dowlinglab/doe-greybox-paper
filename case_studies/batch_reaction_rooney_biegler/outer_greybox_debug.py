@@ -13,7 +13,10 @@ import matplotlib.pyplot as plt
 import json
 import sys
 
-from rooney_biegler_comparison import rooney_biegler_sensitivity, rooney_biegler_parameter_estimation
+from rooney_biegler_comparison import (
+    rooney_biegler_sensitivity,
+    rooney_biegler_parameter_estimation,
+)
 
 from pyomo.common.dependencies import (
     numpy as np,
@@ -75,7 +78,7 @@ class OuterGreyBox(
         # that we use a lower triangular
         # FIM.
         if t is None:
-            t=self._input_values[0]
+            t = self._input_values[0]
 
         if self.gb:
             doe_object = run_outer_greybox_gb(t=t)
@@ -88,7 +91,7 @@ class OuterGreyBox(
         # Cartesian product gives us matrix indices flattened in row-first format
         # Can use itertools.combinations(self._param_names, 2) with added
         # diagonal elements, or do double for loops if we switch to upper triangular
-        return ["hour", ]
+        return ["hour"]
 
     def has_objective(self):
         return True
@@ -157,7 +160,7 @@ class OuterGreyBox(
         # Evaluate FD
         jac_M = (obj_value_hat - obj_value) / 1e-3
 
-        return np.asarray([jac_M, ]) * self.sense
+        return np.asarray([jac_M]) * self.sense
 
 
 def build_outer_greybox_model(gb=True):
@@ -170,9 +173,7 @@ def build_outer_greybox_model(gb=True):
     model.obj_cons = pyo.Block()
 
     # Create FIM External Grey Box object
-    grey_box_model = OuterGreyBox(
-        gb=gb,
-    )
+    grey_box_model = OuterGreyBox(gb=gb)
 
     # Attach External Grey Box Model
     # to the model as an External
@@ -181,7 +182,9 @@ def build_outer_greybox_model(gb=True):
 
     # Add the FIM and External Grey
     # Box inputs constraints
-    model.obj_cons.equality_con = pyo.Constraint(expr=model.t == model.obj_cons.egb_block.inputs["hour"])
+    model.obj_cons.equality_con = pyo.Constraint(
+        expr=model.t == model.obj_cons.egb_block.inputs["hour"]
+    )
 
     return model
 
@@ -223,7 +226,7 @@ def run_outer_greybox_gb(t=1.0):
         FIM_prior += doe_obj.compute_FIM(method='sequential')
 
     # Compute new FIM calculation for a range of time values
-    objective_options = ["determinant", ]
+    objective_options = ["determinant"]
 
     optimal_points = []
     optimal_objective_value = 0
@@ -233,7 +236,6 @@ def run_outer_greybox_gb(t=1.0):
     grey_box_solver.config.options["hessian_approximation"] = "limited-memory"
     grey_box_solver.config.options["linear_solver"] = "ma27"
     grey_box_solver.config.options['mu_strategy'] = "monotone"
-
 
     experiment = RooneyBieglerExperimentDoE(data={'hour': t, 'y': 10})
 
@@ -338,4 +340,3 @@ if __name__ == "__main__":
 
     gb_model.pprint()
     normal_model.pprint()
-

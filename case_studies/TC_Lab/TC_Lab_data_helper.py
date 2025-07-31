@@ -1,4 +1,4 @@
-# Utilizing data helping classes and 
+# Utilizing data helping classes and
 # functions for the experiment class
 
 # Adapted from code originally available at:
@@ -9,6 +9,7 @@ from dataclasses import dataclass
 import pandas as pd
 
 from pyomo.common.dependencies import numpy as np, pathlib
+
 
 @dataclass
 class TC_Lab_data:

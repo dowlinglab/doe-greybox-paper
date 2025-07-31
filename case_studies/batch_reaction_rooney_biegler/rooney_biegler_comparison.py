@@ -13,13 +13,16 @@ import matplotlib.pyplot as plt
 import json
 import sys
 
+
 def rooney_biegler_parameter_estimation():
     # Full data from the Bates and Watts example
     data = [[1, 8.3], [7, 19.8], [2, 10.3], [5, 15.6], [3, 19.0], [4, 16.0]]
 
     experiments = []
     for i in range(int(sys.argv[1])):
-        experiments.append(RooneyBieglerExperimentDoE(data={'hour': data[i][0], 'y': data[i][1]}))
+        experiments.append(
+            RooneyBieglerExperimentDoE(data={'hour': data[i][0], 'y': data[i][1]})
+        )
 
     pest = parmest.Estimator(experiments, obj_function="SSE")
 
@@ -160,7 +163,11 @@ def rooney_biegler_sensitivity():
 
     plt.tight_layout()
     # plt.show()
-    plt.savefig("Rooney_Biegler_Comparison_{}.png".format(int(sys.argv[1])), format="png", dpi=450)
+    plt.savefig(
+        "Rooney_Biegler_Comparison_{}.png".format(int(sys.argv[1])),
+        format="png",
+        dpi=450,
+    )
 
     return ax
 
