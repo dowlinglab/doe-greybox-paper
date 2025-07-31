@@ -1,137 +1,132 @@
 from pyomo.common.dependencies import numpy as np, pathlib
 
-from linear_control_experiment import LinearControlExperiment
-
 from pyomo.contrib.doe import DesignOfExperiments
 
 import pyomo.environ as pyo
+
+from TC_Lab_parameter_estimation import TC_Lab_parmest
 
 import matplotlib.pyplot as plt
 import json
 import sys
 
 
-def run_linear_control_experiment():
-    # Read in the data
-    DATA_DIR = pathlib.Path(__file__).parent
-    file_path = DATA_DIR / "experimental_values_1.json"
-
-    with open(file_path) as f:
-        data_ex = json.load(f)
-
-    # Put temperature control time points into correct format for reactor experiment
-    data_ex["control_points"] = {
-        float(k): v for k, v in data_ex["control_points"].items()
-    }
-
-    # Create the experiment
-    experiment = LinearControlExperiment(data=data_ex, nfe=10, ncp=3)
-
-    model = experiment.get_labeled_model()
-
-    solver = pyo.SolverFactory("ipopt")
-    result = solver.solve(model, tee=True)
-
-    # Grab state data
-    x1_vals = [model.x2[t]() for t in model.t]
-    x2_vals = [model.x1[t]() for t in model.t]
-    t_vals = [t for t in model.t]
-
-    plt.plot(t_vals, x1_vals, label="x1")
-    plt.plot(t_vals, x2_vals, label="x2")
-
-    plt.legend()
-    plt.show()
-
-    # Use a central difference, with step size 1e-3
-    fd_formula = "central"
-    step_size = 1e-3
-
-    # Use the determinant objective with scaled sensitivity matrix
-    objective_option = "determinant"
-    scale_nominal_param_value = True
-
-    # Set up DoE object
-    doe_obj = DesignOfExperiments(
-        experiment,
-        fd_formula=fd_formula,
-        step=step_size,
-        objective_option=objective_option,
-        scale_constant_value=1,
-        scale_nominal_param_value=scale_nominal_param_value,
-        prior_FIM=None,
-        jac_initial=None,
-        fim_initial=None,
-        L_diagonal_lower_bound=1e-7,
-        solver=None,
-        tee=True,
-        get_labeled_model_args=None,
-        _Cholesky_option=True,
-        _only_compute_fim_lower=True,
-    )
-
-    FIM = doe_obj.compute_FIM(method="sequential")
-
-    print(FIM)
-
-    # Grab second experiment
-    file_path_2 = DATA_DIR / "experimental_values_2.json"
-
-    with open(file_path_2) as f:
-        data_ex_2 = json.load(f)
-
-    # Put temperature control time points into correct format for reactor experiment
-    data_ex_2["control_points"] = {
-        float(k): v for k, v in data_ex_2["control_points"].items()
-    }
-
-    experiment_2 = LinearControlExperiment(data=data_ex_2, nfe=10, ncp=3)
-
-    doe_obj_2 = DesignOfExperiments(
-        experiment_2,
-        fd_formula=fd_formula,
-        step=step_size,
-        objective_option=objective_option,
-        scale_constant_value=1,
-        scale_nominal_param_value=scale_nominal_param_value,
-        prior_FIM=FIM,
-        jac_initial=None,
-        fim_initial=None,
-        L_diagonal_lower_bound=1e-7,
-        solver=None,
-        tee=False,
-        get_labeled_model_args=None,
-        _Cholesky_option=True,
-        _only_compute_fim_lower=True,
-    )
-    doe_obj_2.run_doe()
-
-    # Print out a results summary
-    print("Optimal experiment values: ")
-    print(
-        "\tInitial x1 value: {:.2f}".format(doe_obj_2.results["Experiment Design"][0])
-    )
-    print("Optimal experiment values: ")
-    print(
-        "\tInitial x2 value: {:.2f}".format(doe_obj_2.results["Experiment Design"][1])
-    )
-    print(
-        ("\tTemperature values: [" + "{:.2f}, " * 8 + "{:.2f}]").format(
-            *doe_obj_2.results["Experiment Design"][2:]
+def automated_TC_Lab_model_identification(initial_datasets=None, n=2):
+    # Add initial data sets if specified
+    if initial_datasets:
+        data_sets = initial_datasets
+    else:
+        data_sets = []
+    
+    initial_data_len = len(data_sets)
+    
+    # TODO: Use standard naming
+    
+    for i in range(n):
+        if i != 0:
+            # Run the TC Lab
+            
+            # Save the data somewhere
+            
+            # Read the data for parameter estimation
+            DATA_DIR = pathlib.Path(__file__).parent
+            new_data_file_path = DATA_DIR / "experimental_values_1.json"
+            
+            data_sets.append(new_data_file_path)
+        
+        # Perform parameter estimation with all existing data
+        theta_current = TC_Lab_parameter_estimation(data_files=data_sets, generate_Th=False)
+        
+        # Gather FIM priors to perform estimation (use constant
+        # scaling for number of experiments?)
+        prior_FIM = np.zeros((4, 4))
+        
+        # Compute current constant scaling
+        curr_const_scaling = 1 + i + initial_data_len
+        
+        for prev_file in data_files:
+            # Read data
+            df = pd.read_csv(prev_file)
+            
+            # Make data object
+            tc_data = TC_Lab_data(
+                name="Specified Profile for Heater 1",
+                time=df['Time'].values[::skip],
+                T1=df['T1'].values[::skip],
+                u1=df['Q1'].values[::skip],
+                P1=200,
+                TS1_data=None,
+                T2=df['T2'].values[::skip],
+                u2=df['Q2'].values[::skip],
+                P2=200,
+                TS2_data=None,
+                Tamb=df['T1'].values[0],
+            )
+            
+            # Make experiment object
+            experiment = TC_Lab_experiment(
+                data=tc_data,
+                theta_initial=theta_current,
+                number_of_states=number_tclab_states,
+                include_Th=True,
+            )
+            
+            # Make DoE object
+            TC_Lab_compute_FIM = DesignOfExperiments(
+                experiment=experiment,
+                step=1e-2,
+                scale_constant_value=curr_const_scaling,
+                scale_nominal_param_value=True,
+                tee=True,
+            )
+            
+            # Compute FIM
+            FIM = TC_Lab_compute_FIM.compute_FIM(method='sequential')
+            
+            # Add to prior
+            prior_FIM += FIM
+        
+        # Make new experiment object
+        experiment_DoE = TC_Lab_experiment(
+                data=tc_data,
+                theta_initial=theta_current,
+                number_of_states=number_tclab_states,
+                include_Th=True,
         )
-    )
-    print("FIM at optimal design:\n {}".format(np.array(doe_obj_2.results["FIM"])))
-    print(
-        "Objective value at optimal design: {:.2f}".format(
-            pyo.value(doe_obj_2.model.objective)
+        
+        # Make new DoE object for design
+        TC_Lab_DoE = DesignOfExperiments(
+            experiment=experiment_DoE,
+            step=1e-2,
+            scale_constant_value=curr_const_scaling,
+            scale_nominal_param_value=True,
+            tee=True,
+            prior_FIM=prior_FIM,
+            objective_option="determinant",
         )
-    )
-
-    print(doe_obj_2.results["Experiment Design Names"])
-
-    ###################
-    # End optimal DoE
+        
+        # Perform DoE
+        TC_Lab_DoE.run_doe()
+        
+        FIM_current = TC_Lab_DoE.get_FIM()
+        
+        # Rescale FIM???
+        
+        # Grab result from optimal DoE
+        
+        # Set control profile from DoE result
+        
+        # Allow system to cool down before running again
+    
+    return theta_current, FIM_current
 
 
 if __name__ == "__main__":
-    run_linear_control_experiment()
+    # Specifiy initial data
+    data_sets = []
+    
+    # Run automated DoE
+    theta, FIM = automated_TC_Lab_model_identification(initial_datasets=data_sets, n=2)
+    
+    # Print and plot the theta values and posteriors?
+    
