@@ -44,6 +44,7 @@ class LinearControlExperiment(Experiment):
 
         # Define model variables
         ########################
+
         # time
         m.t = ContinuousSet(bounds=[0, 1])
 
@@ -137,8 +138,8 @@ class LinearControlExperiment(Experiment):
 
     def label_experiment(self):
         """
-        Example for annotating (labeling) the model with a
-        full experiment.
+        Annotating (labeling) the model with all pertinent
+        information.
         """
         m = self.model
 
