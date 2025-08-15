@@ -490,11 +490,15 @@ class MSContactorExperiment(Experiment):
 
         # adding and fixing diafiltrate stream to mixer 2 inlet_1
         m.fs.mix2.inlet_1.flow_vol[0].fix(self.data["Q_diafiltrate"])
+        m.fs.mix2.inlet_1.flow_vol[0].setub(1e-3)
+        m.fs.mix2.inlet_1.flow_vol[0].setub(30)
         m.fs.mix2.inlet_1.conc_mass_solute[0, "Li"].fix(self.data["C_Li_diafiltrate"])
         m.fs.mix2.inlet_1.conc_mass_solute[0, "Co"].fix(self.data["C_Co_diafiltrate"])
 
         # fixing fresh feed conditions at element 10 of stage 3
         m.fs.stage3.retentate_side_stream_state[0, 10].flow_vol.fix(self.data["Q_feed"])
+        m.fs.stage3.retentate_side_stream_state[0, 10].flow_vol.setlb(1e-3)
+        m.fs.stage3.retentate_side_stream_state[0, 10].flow_vol.setub(100)
         m.fs.stage3.retentate_side_stream_state[0, 10].conc_mass_solute["Li"].fix(self.data["C_Li_feed"])
         m.fs.stage3.retentate_side_stream_state[0, 10].conc_mass_solute["Co"].fix(self.data["C_Co_feed"])
 
@@ -573,8 +577,8 @@ class MSContactorExperiment(Experiment):
 
         # Adding error for measurement values (assuming no covariance and constant error for all measurements)
         m.measurement_error = pyo.Suffix(direction=pyo.Suffix.LOCAL)
-        flow_error = 1e-5  # m^3  (10 Liter error)
-        concentration_error = 1e-3  # kg/m^3
+        flow_error = 2e0  # m^3  (10 Liter error)
+        concentration_error = 1e-1  # kg/m^3
         # Add retentate flow rate error
         m.measurement_error[m.fs.stage1.retentate_outlet.flow_vol[0]] = flow_error
         # Add retentate concentration errors (Co and Li)
@@ -590,15 +594,15 @@ class MSContactorExperiment(Experiment):
         # Identify design variables (experiment inputs) for the model
         m.experiment_inputs = pyo.Suffix(direction=pyo.Suffix.LOCAL)
         # Add feed flow rate
-        m.experiment_inputs[m.fs.stage1.retentate_inlet.flow_vol[0]] = None
+        m.experiment_inputs[m.fs.stage3.retentate_side_stream_state[0, 10].flow_vol] = None
         # Add feed concentrations (Co and Li)
-        m.experiment_inputs[m.fs.stage1.retentate_inlet.conc_mass_solute[0, "Co"]] = None
-        m.experiment_inputs[m.fs.stage1.retentate_inlet.conc_mass_solute[0, "Li"]] = None
+        # m.experiment_inputs[m.fs.stage3.retentate_side_stream_state[0, 10].conc_mass_solute["Co"]] = None
+        # m.experiment_inputs[m.fs.stage3.retentate_side_stream_state[0, 10].conc_mass_solute["Li"]] = None
         # Add diafiltrate flow rate
         m.experiment_inputs[m.fs.mix2.inlet_1.flow_vol[0]] = None
         # Add diafiltrate concentrations (Co and Li)
-        m.experiment_inputs[m.fs.mix2.inlet_1.conc_mass_solute[0, "Co"]] = None
-        m.experiment_inputs[m.fs.mix2.inlet_1.conc_mass_solute[0, "Li"]] = None
+        # m.experiment_inputs[m.fs.mix2.inlet_1.conc_mass_solute[0, "Co"]] = None
+        # m.experiment_inputs[m.fs.mix2.inlet_1.conc_mass_solute[0, "Li"]] = None
 
         # Add unknown parameter labels
         m.unknown_parameters = pyo.Suffix(direction=pyo.Suffix.LOCAL)
