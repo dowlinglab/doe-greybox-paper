@@ -550,6 +550,12 @@ class MSContactorExperiment(Experiment):
         """
         m = self.model
 
+        # Set experimental design bounds
+        m.fs.stage3.retentate_side_stream_state[0, 10].flow_vol.setlb = 50
+        m.fs.stage3.retentate_side_stream_state[0, 10].flow_vol.setub = 90
+        m.fs.mix2.inlet_1.flow_vol[0].setlb = 10
+        m.fs.mix2.inlet_1.flow_vol[0].setub = 30
+
         # solving model
         solver = pyo.SolverFactory("ipopt")
         solver.solve(m.fs)
