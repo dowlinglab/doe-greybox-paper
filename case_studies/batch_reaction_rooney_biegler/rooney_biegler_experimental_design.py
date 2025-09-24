@@ -18,6 +18,19 @@ from rooney_biegler_comparison import (
     rooney_biegler_parameter_estimation,
 )
 
+SMALL_SIZE = 16
+MEDIUM_SIZE = 18
+BIGGER_SIZE = 20
+
+plt.rc('font', size=SMALL_SIZE)  # controls default text sizes
+plt.rc('axes', titlesize=SMALL_SIZE)  # fontsize of the axes title
+plt.rc('axes', labelsize=MEDIUM_SIZE)  # fontsize of the x and y labels
+plt.rc('xtick', labelsize=SMALL_SIZE)  # fontsize of the tick labels
+plt.rc('ytick', labelsize=SMALL_SIZE)  # fontsize of the tick labels
+plt.rc('legend', fontsize=SMALL_SIZE)  # legend fontsize
+plt.rc('figure', titlesize=BIGGER_SIZE)  # fontsize of the figure title
+plt.rc('lines', linewidth=3)
+
 
 def run_greybox_optimization():
     # Gather preliminary estimate of coefficients with n experiments
@@ -153,11 +166,17 @@ def run_greybox_optimization():
 
     ax = rooney_biegler_sensitivity()
 
-    ax[0, 0].plot(regular_doe[0], regular_doe[1], marker='o', fillstyle='none', markeredgewidth=3, color='blue', ms=15)
+    # ax[0, 0].plot(regular_doe[0], regular_doe[1], marker='o', fillstyle='none', markeredgewidth=3, color='blue', ms=15)
     ax[0, 0].plot(optimal_points[0][0], optimal_points[0][1], marker='*', color='gold', ms=20)
     ax[0, 1].plot(optimal_points[2][0], optimal_points[2][1], marker='*', color='gold', ms=20)
     ax[1, 0].plot(optimal_points[3][0], optimal_points[3][1], marker='*', color='gold', ms=20)
     ax[1, 1].plot(optimal_points[1][0], optimal_points[1][1], marker='*', color='gold', ms=20)
+    for rows in range(2):
+        for cols in range(3):
+            ax[rows, cols].locator_params(axis='x', nbins=3)
+            ax[rows, cols].locator_params(axis='y', nbins=5)
+    # plt.tight_layout()
+    # plt.savefig("batch_reactor_optimal_design.png", format='png', dpi=450)
     plt.show()
 
 
