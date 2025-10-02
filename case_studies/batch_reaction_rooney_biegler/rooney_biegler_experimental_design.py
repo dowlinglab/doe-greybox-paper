@@ -83,9 +83,10 @@ def run_greybox_optimization():
 
     # Define our own grey box solver
     grey_box_solver = pyo.SolverFactory("cyipopt")
-    grey_box_solver.config.options["hessian_approximation"] = "limited-memory"
+    # grey_box_solver.config.options["hessian_approximation"] = "limited-memory"
     grey_box_solver.config.options["linear_solver"] = "ma27"
     grey_box_solver.config.options['mu_strategy'] = "monotone"
+    # grey_box_solver.config.options['tol'] = 1e-4
 
     try_things = {
         "determinant": 1.78,  # 1.78 for optimal
@@ -96,7 +97,7 @@ def run_greybox_optimization():
 
     for objective_option in objective_options:
         experiment = RooneyBieglerExperimentDoE(
-            data={'hour': try_things[objective_option], 'y': 15}
+            data={'hour': try_things[objective_option] * 0 + 4.5, 'y': 15}
         )
 
         doe_obj_gb = DesignOfExperiments(

@@ -77,6 +77,7 @@ def rooney_biegler_sensitivity():
     min_eig_vals = []
     max_eig_vals = []
     cond_vals = []
+    log_cond_vals = []
     A_opt_vals = []
     trace_FIM_vals = []
     y_vals = []
@@ -111,6 +112,7 @@ def rooney_biegler_sensitivity():
         max_eig_vals.append(np.max(eig))
         det_vals.append(np.log(np.linalg.det(FIM)))
         cond_vals.append(np.linalg.cond(FIM))
+        log_cond_vals.append(np.log(cond_vals[-1]))
 
     fig, ax = plt.subplots(2, 3, figsize=(9, 8))
 
