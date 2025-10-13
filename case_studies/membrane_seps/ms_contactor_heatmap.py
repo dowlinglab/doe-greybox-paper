@@ -34,6 +34,7 @@ def get_FIM_metrics(result):
 
     return A_opt, D_opt, E_opt, ME_opt
 
+
 # Set the design ranges for the decision vars
 design_ranges = {
     "feed_flow": [50, 60, 70, 80, 90],
@@ -60,7 +61,11 @@ for diafiltrate_flow in design_ranges["diafiltrate_flow"]:
     for feed_flow in design_ranges["feed_flow"]:
         count += 1
         print("=======Iteration Number: {} =======".format(count))
-        print("Design variable values for this iteration: (Feed flow: {}, Diafiltrate flow: {})".format(feed_flow, diafiltrate_flow))
+        print(
+            "Design variable values for this iteration: (Feed flow: {}, Diafiltrate flow: {})".format(
+                feed_flow, diafiltrate_flow
+            )
+        )
 
         data_feed_flow.append(feed_flow)
         data_diafiltrate_flow.append(diafiltrate_flow)
@@ -76,11 +81,13 @@ for diafiltrate_flow in design_ranges["diafiltrate_flow"]:
         solver.options["linear_solver"] = "ma27"
 
         # Create the design of experiments object using our experiment instance from above
-        ms_contactor_DoE = DesignOfExperiments(experiment=doe_experiment,
-                                                 step=1e-2,
-                                                 scale_constant_value=1,
-                                                 scale_nominal_param_value=True,
-                                                 tee=True, )
+        ms_contactor_DoE = DesignOfExperiments(
+            experiment=doe_experiment,
+            step=1e-2,
+            scale_constant_value=1,
+            scale_nominal_param_value=True,
+            tee=True,
+        )
 
         FIM = ms_contactor_DoE.compute_FIM(method='sequential')
 

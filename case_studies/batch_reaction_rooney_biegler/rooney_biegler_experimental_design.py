@@ -73,10 +73,12 @@ def run_greybox_optimization():
         FIM_prior[1][1] += 1e-6
 
     # Compute new FIM calculation for a range of time values
-    objective_options = ["determinant",
-                         "trace",
-                         "minimum_eigenvalue",
-                         "condition_number"]
+    objective_options = [
+        "determinant",
+        "trace",
+        "minimum_eigenvalue",
+        "condition_number",
+    ]
 
     optimal_points = []
     optimal_objective_value = 0
@@ -168,10 +170,18 @@ def run_greybox_optimization():
     ax = rooney_biegler_sensitivity()
 
     # ax[0, 0].plot(regular_doe[0], regular_doe[1], marker='o', fillstyle='none', markeredgewidth=3, color='blue', ms=15)
-    ax[0, 0].plot(optimal_points[0][0], optimal_points[0][1], marker='*', color='gold', ms=20)
-    ax[0, 1].plot(optimal_points[2][0], optimal_points[2][1], marker='*', color='gold', ms=20)
-    ax[1, 0].plot(optimal_points[3][0], optimal_points[3][1], marker='*', color='gold', ms=20)
-    ax[1, 1].plot(optimal_points[1][0], optimal_points[1][1], marker='*', color='gold', ms=20)
+    ax[0, 0].plot(
+        optimal_points[0][0], optimal_points[0][1], marker='*', color='gold', ms=20
+    )
+    ax[0, 1].plot(
+        optimal_points[2][0], optimal_points[2][1], marker='*', color='gold', ms=20
+    )
+    ax[1, 0].plot(
+        optimal_points[3][0], optimal_points[3][1], marker='*', color='gold', ms=20
+    )
+    ax[1, 1].plot(
+        optimal_points[1][0], optimal_points[1][1], marker='*', color='gold', ms=20
+    )
     for rows in range(2):
         for cols in range(3):
             ax[rows, cols].locator_params(axis='x', nbins=3)

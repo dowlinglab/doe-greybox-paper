@@ -82,13 +82,10 @@ class LiCoStateBlock1Data(StateBlockData):
         super().build()
 
         self.flow_vol = pyo.Var(
-            units=pyo.units.m**3 / pyo.units.hour,
-            bounds=(1e-8, None),
+            units=pyo.units.m**3 / pyo.units.hour, bounds=(1e-8, None)
         )
         self.conc_mass_solute = pyo.Var(
-            ["Li", "Co"],
-            units=pyo.units.kg / pyo.units.m**3,
-            bounds=(1e-8, None),
+            ["Li", "Co"], units=pyo.units.kg / pyo.units.m**3, bounds=(1e-8, None)
         )
 
     def get_material_flow_terms(self, p, j):
@@ -102,10 +99,7 @@ class LiCoStateBlock1Data(StateBlockData):
         return MaterialFlowBasis.mass
 
     def define_state_vars(self):
-        return {
-            "flow_vol": self.flow_vol,
-            "conc_mass_solute": self.conc_mass_solute,
-        }
+        return {"flow_vol": self.flow_vol, "conc_mass_solute": self.conc_mass_solute}
 
 
 # This class serves to define the
@@ -123,10 +117,7 @@ class LiCoParameterData(PhysicalParameterBlock):
         self.Li = Component()
         self.Co = Component()
 
-        self.dens_H2O = pyo.Param(
-            default=1000,
-            units=pyo.units.kg / pyo.units.m**3,
-        )
+        self.dens_H2O = pyo.Param(default=1000, units=pyo.units.kg / pyo.units.m**3)
 
         self._state_block_class = LiCoStateBlock
 
@@ -247,8 +238,7 @@ class MSContactorExperiment(Experiment):
 
         # Adding solvent flux constraint
         m.fs.stage1.solvent_flux = pyo.Constraint(
-            m.fs.stage1.elements,
-            rule=solvent_rule,
+            m.fs.stage1.elements, rule=solvent_rule
         )
 
         # Defining solute flux
@@ -278,15 +268,17 @@ class MSContactorExperiment(Experiment):
 
         # Adding solute flux constraint
         m.fs.stage1.solute_sieving = pyo.Constraint(
-            m.fs.stage1.elements,
-            m.fs.solutes,
-            rule=solute_rule,
+            m.fs.stage1.elements, m.fs.solutes, rule=solute_rule
         )
 
         # initial guess for stage 1 recycle stream (retentate of stage 3)
         m.fs.stage1.retentate_inlet.flow_vol[0].fix(self.data["Q_feed"])
-        m.fs.stage1.retentate_inlet.conc_mass_solute[0, "Li"].fix(self.data["C_Li_feed"])
-        m.fs.stage1.retentate_inlet.conc_mass_solute[0, "Co"].fix(self.data["C_Co_feed"])
+        m.fs.stage1.retentate_inlet.conc_mass_solute[0, "Li"].fix(
+            self.data["C_Li_feed"]
+        )
+        m.fs.stage1.retentate_inlet.conc_mass_solute[0, "Co"].fix(
+            self.data["C_Co_feed"]
+        )
 
         ########################
         # Finish stage 1 addition
@@ -319,7 +311,9 @@ class MSContactorExperiment(Experiment):
         m.fs.stage2.length.fix(10)  # TODO: Make stage length(s) an input?
 
         # Adding solvent and solute flux constraints
-        m.fs.stage2.solvent_flux = pyo.Constraint(m.fs.stage2.elements, rule=solvent_rule)
+        m.fs.stage2.solvent_flux = pyo.Constraint(
+            m.fs.stage2.elements, rule=solvent_rule
+        )
         m.fs.stage2.solute_sieving = pyo.Constraint(
             m.fs.stage2.elements, m.fs.solutes, rule=solute_rule
         )
@@ -335,20 +329,17 @@ class MSContactorExperiment(Experiment):
 
         # adding a stream that connects stage 1 permeate and mixer 1 inlet_2
         m.fs.stream1 = Arc(
-            source=m.fs.stage1.permeate_outlet,
-            destination=m.fs.mix1.inlet_2,
+            source=m.fs.stage1.permeate_outlet, destination=m.fs.mix1.inlet_2
         )
 
         # adding a stream that connects mixer 1 outlet and stage 2 retentate inlet
         m.fs.stream2 = Arc(
-            source=m.fs.mix1.outlet,
-            destination=m.fs.stage2.retentate_inlet,
+            source=m.fs.mix1.outlet, destination=m.fs.stage2.retentate_inlet
         )
 
         # adding a stream that connects stage 2 retentate outlet and stage 1 retentate inlet
         m.fs.stream3 = Arc(
-            source=m.fs.stage2.retentate_outlet,
-            destination=m.fs.stage1.retentate_inlet,
+            source=m.fs.stage2.retentate_outlet, destination=m.fs.stage1.retentate_inlet
         )
 
         # Converting connections to constraints
@@ -366,8 +357,7 @@ class MSContactorExperiment(Experiment):
 
         # copying stage 1 permeate outlet conditions to mixer 1 inlet_1
         propagate_state(
-            destination=m.fs.mix1.inlet_2,
-            source=m.fs.stage1.permeate_outlet,
+            destination=m.fs.mix1.inlet_2, source=m.fs.stage1.permeate_outlet
         )
 
         # initializing mixer 1
@@ -375,7 +365,9 @@ class MSContactorExperiment(Experiment):
         mix_initializer.initialize(m.fs.mix1)
 
         # copying mixer 1 outlet conditions to stage 2 retentate inlet
-        propagate_state(source=m.fs.mix1.outlet, destination=m.fs.stage2.retentate_inlet)
+        propagate_state(
+            source=m.fs.mix1.outlet, destination=m.fs.stage2.retentate_inlet
+        )
 
         ########################
         # Finish stage 2 addition
@@ -447,15 +439,12 @@ class MSContactorExperiment(Experiment):
 
         # adding solvent flux constraint
         m.fs.stage3.solvent_flux = pyo.Constraint(
-            m.fs.stage3.elements,
-            rule=solvent_rule,
+            m.fs.stage3.elements, rule=solvent_rule
         )
 
         # adding solute flux constraint
         m.fs.stage3.solute_sieving = pyo.Constraint(
-            m.fs.stage3.elements,
-            m.fs.solutes,
-            rule=stage3_solute_rule,
+            m.fs.stage3.elements, m.fs.solutes, rule=stage3_solute_rule
         )
 
         # mixer 2 for stage 2 permeate outlet and stage 3 retentate outlet
@@ -473,7 +462,9 @@ class MSContactorExperiment(Experiment):
         )
 
         # adding a stream that connects mixer 2 outlet and stage 3 retentate inlet
-        m.fs.stream5 = Arc(source=m.fs.mix2.outlet, destination=m.fs.stage3.retentate_inlet)
+        m.fs.stream5 = Arc(
+            source=m.fs.mix2.outlet, destination=m.fs.stage3.retentate_inlet
+        )
 
         # adding a stream that connects stage 3 retentate outlet and mixer 1 inlet_1
         m.fs.stream6 = Arc(
@@ -499,17 +490,25 @@ class MSContactorExperiment(Experiment):
         m.fs.stage3.retentate_side_stream_state[0, 10].flow_vol.fix(self.data["Q_feed"])
         m.fs.stage3.retentate_side_stream_state[0, 10].flow_vol.setlb(1e-3)
         m.fs.stage3.retentate_side_stream_state[0, 10].flow_vol.setub(100)
-        m.fs.stage3.retentate_side_stream_state[0, 10].conc_mass_solute["Li"].fix(self.data["C_Li_feed"])
-        m.fs.stage3.retentate_side_stream_state[0, 10].conc_mass_solute["Co"].fix(self.data["C_Co_feed"])
+        m.fs.stage3.retentate_side_stream_state[0, 10].conc_mass_solute["Li"].fix(
+            self.data["C_Li_feed"]
+        )
+        m.fs.stage3.retentate_side_stream_state[0, 10].conc_mass_solute["Co"].fix(
+            self.data["C_Co_feed"]
+        )
 
         # copying stage 2 permeate outlet conditions to mixer 2 inlet_2
-        propagate_state(source=m.fs.stage2.permeate_outlet, destination=m.fs.mix2.inlet_2)
+        propagate_state(
+            source=m.fs.stage2.permeate_outlet, destination=m.fs.mix2.inlet_2
+        )
 
         # initializing mixer 2
         mix_initializer.initialize(m.fs.mix2)
 
         # copying mixer 2 outlet conditions to stage 3 retentate inlet
-        propagate_state(source=m.fs.mix2.outlet, destination=m.fs.stage3.retentate_inlet)
+        propagate_state(
+            source=m.fs.mix2.outlet, destination=m.fs.stage3.retentate_inlet
+        )
 
         ########################
         # Finish stage 3 addition
@@ -522,24 +521,24 @@ class MSContactorExperiment(Experiment):
         # calculating lithium and cobalt recovery
         m.Li_recovery = pyo.Expression(
             expr=m.fs.stage3.permeate_outlet.flow_vol[0]
-                 * m.fs.stage3.permeate_outlet.conc_mass_solute[0, "Li"]
-                 / (
-                         m.fs.mix2.inlet_1.flow_vol[0]
-                         * m.fs.mix2.inlet_1.conc_mass_solute[0, "Li"]
-                         + m.fs.stage3.retentate_side_stream_state[0, 10].flow_vol
-                         * m.fs.stage3.retentate_side_stream_state[0, 10].conc_mass_solute["Li"]
-                 )
+            * m.fs.stage3.permeate_outlet.conc_mass_solute[0, "Li"]
+            / (
+                m.fs.mix2.inlet_1.flow_vol[0]
+                * m.fs.mix2.inlet_1.conc_mass_solute[0, "Li"]
+                + m.fs.stage3.retentate_side_stream_state[0, 10].flow_vol
+                * m.fs.stage3.retentate_side_stream_state[0, 10].conc_mass_solute["Li"]
+            )
         )
 
         m.Co_recovery = pyo.Expression(
             expr=m.fs.stage1.retentate_outlet.flow_vol[0]
-                 * m.fs.stage1.retentate_outlet.conc_mass_solute[0, "Co"]
-                 / (
-                         m.fs.mix2.inlet_1.flow_vol[0]
-                         * m.fs.mix2.inlet_1.conc_mass_solute[0, "Co"]
-                         + m.fs.stage3.retentate_side_stream_state[0, 10].flow_vol
-                         * m.fs.stage3.retentate_side_stream_state[0, 10].conc_mass_solute["Co"]
-                 )
+            * m.fs.stage1.retentate_outlet.conc_mass_solute[0, "Co"]
+            / (
+                m.fs.mix2.inlet_1.flow_vol[0]
+                * m.fs.mix2.inlet_1.conc_mass_solute[0, "Co"]
+                + m.fs.stage3.retentate_side_stream_state[0, 10].flow_vol
+                * m.fs.stage3.retentate_side_stream_state[0, 10].conc_mass_solute["Co"]
+            )
         )
 
     def finalize_model(self):
@@ -572,11 +571,19 @@ class MSContactorExperiment(Experiment):
         # Add retentate flow rate
         m.experiment_outputs[m.fs.stage1.retentate_outlet.flow_vol[0]] = None
         # Add retentate concentrations (Co and Li)
-        m.experiment_outputs[m.fs.stage1.retentate_outlet.conc_mass_solute[0, "Co"]] = None
-        m.experiment_outputs[m.fs.stage1.retentate_outlet.conc_mass_solute[0, "Li"]] = None
+        m.experiment_outputs[m.fs.stage1.retentate_outlet.conc_mass_solute[0, "Co"]] = (
+            None
+        )
+        m.experiment_outputs[m.fs.stage1.retentate_outlet.conc_mass_solute[0, "Li"]] = (
+            None
+        )
         # Add permeate concentrations (Co and Li)
-        m.experiment_outputs[m.fs.stage3.permeate_outlet.conc_mass_solute[0, "Co"]] = None
-        m.experiment_outputs[m.fs.stage3.permeate_outlet.conc_mass_solute[0, "Li"]] = None
+        m.experiment_outputs[m.fs.stage3.permeate_outlet.conc_mass_solute[0, "Co"]] = (
+            None
+        )
+        m.experiment_outputs[m.fs.stage3.permeate_outlet.conc_mass_solute[0, "Li"]] = (
+            None
+        )
         # Currently not adding permeate flow
         # Can be added by uncommenting following line:
         # m.experiment_outputs[m.fs.stage3.permeate_outlet.flow_vol[0]] = None
@@ -588,11 +595,19 @@ class MSContactorExperiment(Experiment):
         # Add retentate flow rate error
         m.measurement_error[m.fs.stage1.retentate_outlet.flow_vol[0]] = flow_error
         # Add retentate concentration errors (Co and Li)
-        m.measurement_error[m.fs.stage1.retentate_outlet.conc_mass_solute[0, "Co"]] = concentration_error
-        m.measurement_error[m.fs.stage1.retentate_outlet.conc_mass_solute[0, "Li"]] = concentration_error
+        m.measurement_error[m.fs.stage1.retentate_outlet.conc_mass_solute[0, "Co"]] = (
+            concentration_error
+        )
+        m.measurement_error[m.fs.stage1.retentate_outlet.conc_mass_solute[0, "Li"]] = (
+            concentration_error
+        )
         # Add permeate concentration errors (Co and Li)
-        m.measurement_error[m.fs.stage3.permeate_outlet.conc_mass_solute[0, "Co"]] = concentration_error
-        m.measurement_error[m.fs.stage3.permeate_outlet.conc_mass_solute[0, "Li"]] = concentration_error
+        m.measurement_error[m.fs.stage3.permeate_outlet.conc_mass_solute[0, "Co"]] = (
+            concentration_error
+        )
+        m.measurement_error[m.fs.stage3.permeate_outlet.conc_mass_solute[0, "Li"]] = (
+            concentration_error
+        )
         # Currently not adding permeate flow
         # Can be added by uncommenting following line:
         # m.measurement_error[m.fs.stage3.permeate_outlet.flow_vol[0]] = flow_error
@@ -600,7 +615,9 @@ class MSContactorExperiment(Experiment):
         # Identify design variables (experiment inputs) for the model
         m.experiment_inputs = pyo.Suffix(direction=pyo.Suffix.LOCAL)
         # Add feed flow rate
-        m.experiment_inputs[m.fs.stage3.retentate_side_stream_state[0, 10].flow_vol] = None
+        m.experiment_inputs[m.fs.stage3.retentate_side_stream_state[0, 10].flow_vol] = (
+            None
+        )
         # Add feed concentrations (Co and Li)
         # m.experiment_inputs[m.fs.stage3.retentate_side_stream_state[0, 10].conc_mass_solute["Co"]] = None
         # m.experiment_inputs[m.fs.stage3.retentate_side_stream_state[0, 10].conc_mass_solute["Li"]] = None
@@ -613,7 +630,10 @@ class MSContactorExperiment(Experiment):
         # Add unknown parameter labels
         m.unknown_parameters = pyo.Suffix(direction=pyo.Suffix.LOCAL)
         # Add labels to all unknown parameters with nominal value as the value
-        m.unknown_parameters.update((k, pyo.value(k)) for k in [m.fs.sieving_coefficient["Li"], m.fs.sieving_coefficient["Co"]])
+        m.unknown_parameters.update(
+            (k, pyo.value(k))
+            for k in [m.fs.sieving_coefficient["Li"], m.fs.sieving_coefficient["Co"]]
+        )
 
         #########################
         # End model labeling
