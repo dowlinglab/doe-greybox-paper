@@ -71,8 +71,12 @@ def TC_Lab_parmest(data_files, generate_Th=False, number_of_states=2):
         # Add experiment to list
         experiments.append(experiment)
 
+    # Add solver options
+    solver_options = {}
+    solver_options["linear_solver"] = "ma57"
+    
     # Perform estimation
-    pest = parmest.Estimator(experiments, obj_function='SSE', tee=True)
+    pest = parmest.Estimator(experiments, obj_function='SSE', tee=True, solver_options=solver_options)
 
     obj, theta = pest.theta_est()
 

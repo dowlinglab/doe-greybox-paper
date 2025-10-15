@@ -140,12 +140,14 @@ def run_single_TC_Lab_experiment():
     TC_Lab_DoE_D = DesignOfExperiments(
         experiment=doe_experiment,
         step=1e-2,
+        use_grey_box_objective=True,  # Comment out if normal
         scale_constant_value=1,
         scale_nominal_param_value=True,
-        objective_option="determinant",  # Now we specify a type of objective, D-opt = "determinant"
+        objective_option="minimum_eigenvalue",  # Now we specify a type of objective, D-opt = "determinant"
         prior_FIM=FIM
         + FIM2,  # We use the prior information from the existing experiment!
         tee=True,
+        grey_box_tee=True,
     )
 
     # Run the experimental design
