@@ -2,6 +2,8 @@ import pyomo.environ as pyo
 from matplotlib import pyplot as plt
 from pyomo.network import Arc
 import numpy as np
+from scipy import stats
+from pyDOE2 import fullfact
 import pandas as pd
 import pyomo.contrib.parmest.parmest as parmest
 from idaes.core import (
@@ -24,6 +26,7 @@ from idaes.core.util.initialization import propagate_state
 from pyomo.dae import ContinuousSet, DerivativeVar, Simulator
 from pyomo.contrib.parmest.experiment import Experiment
 import pyomo.dae as dae
+import logging
 
 
 # State Block class is used to define utility methods that can be applied to multiple State Block Data instances at one time
@@ -693,15 +696,11 @@ class MembraneExperiment(Experiment):
 
         # adding and fixing diafiltrate stream to mixer 2 inlet_1
         m.fs.mix2.inlet_1.flow_vol[0].fix(self.data["Q_diaf (m^3/hr)"])
-        m.fs.mix2.inlet_1.flow_vol[0].setub(1e-3)
-        m.fs.mix2.inlet_1.flow_vol[0].setub(33)
         m.fs.mix2.inlet_1.conc_mass_solute[0, "Li"].fix(0)
         m.fs.mix2.inlet_1.conc_mass_solute[0, "Co"].fix(0)
 
         # fixing fresh feed conditions at element 10 of stage 3
         m.fs.stage3.retentate_side_stream_state[0, 10].flow_vol.fix(self.data["Q_feed (m^3/hr)"])
-        m.fs.stage3.retentate_side_stream_state[0, 10].flow_vol.setlb(1e-3)
-        m.fs.stage3.retentate_side_stream_state[0, 10].flow_vol.setub(110)
         m.fs.stage3.retentate_side_stream_state[0, 10].conc_mass_solute["Li"].fix(self.data["C_Li_feed (kg/m^3)"])
         m.fs.stage3.retentate_side_stream_state[0, 10].conc_mass_solute["Co"].fix(self.data["C_Co_feed (kg/m^3)"])
 
@@ -733,12 +732,6 @@ class MembraneExperiment(Experiment):
             m: pyomo model
         """
         m = self.model
-
-        # Set experimental design bounds
-        m.fs.stage3.retentate_side_stream_state[0, 10].flow_vol.setlb = 90
-        m.fs.stage3.retentate_side_stream_state[0, 10].flow_vol.setub = 110
-        m.fs.mix2.inlet_1.flow_vol[0].setlb = 27
-        m.fs.mix2.inlet_1.flow_vol[0].setub = 33
 
         # solving model
         solver = pyo.SolverFactory("ipopt")
