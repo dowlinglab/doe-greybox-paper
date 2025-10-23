@@ -23,6 +23,21 @@ import re
 import subprocess
 
 
+# Plotting options
+SMALL_SIZE = 16
+MEDIUM_SIZE = 18
+BIGGER_SIZE = 20
+
+plt.rc('font', size=SMALL_SIZE)  # controls default text sizes
+plt.rc('axes', titlesize=SMALL_SIZE)  # fontsize of the axes title
+plt.rc('axes', labelsize=MEDIUM_SIZE)  # fontsize of the x and y labels
+plt.rc('xtick', labelsize=SMALL_SIZE)  # fontsize of the tick labels
+plt.rc('ytick', labelsize=SMALL_SIZE)  # fontsize of the tick labels
+plt.rc('legend', fontsize=SMALL_SIZE)  # legend fontsize
+plt.rc('figure', titlesize=BIGGER_SIZE)  # fontsize of the figure title
+plt.rc('lines', linewidth=3)
+
+
 # Experiment object
 class TC_Lab_experiment(Experiment):
     def __init__(
@@ -529,7 +544,41 @@ def extract_results(model, name="Pyomo results", number_of_states=2):
     return TC_Lab_data(name, time, Th1, U1, P1, Ts1, Th2, U2, P2, Ts2, Tamb)
 
 
-def extract_plot_results(tc_exp_data, model, number_of_states=2):
+def recover_standard_params(theta_vals=None, alpha=None, P1=None):
+    """
+    Function to recover the original parameter
+    values from the model after estimation.
+
+    Arguments
+    ---------
+    theta_vals: dict, keys are reparametrized parameter names
+                and values are numerical values of those
+                parameters
+    alpha: float, alpha value for beta 4
+    P1: float, P1 value for beta 4
+
+    Returns
+    -------
+    orig_theta_vals: dict, keys are original parameter names
+                     and values are numerical values of those
+                     parameters
+    """
+    if theta_vals is None:
+        raise ValueError("theta_vals cannot be None, please provide a dictionary of values for the reparametrized parameter values")
+
+    # Recover the values
+    CpH = alpha * P1 / theta_vals["beta_4"]
+    Ua = CpH * theta_vals["beta_1"]
+    Ub = CpH * theta_vals["beta_2"]
+    CpS = Ub / theta_vals["beta_3"]
+
+    # Store them in a dictionary
+    orig_theta_vals = {"Ua": Ua, "Ub": Ub, "inv_CpH": 1/CpH, "inv_CpS": 1/CpS}
+
+    return orig_theta_vals
+
+
+def extract_plot_results(tc_exp_data, model, number_of_states=2, reparam=False, save_plot=False, file_name=None):
     """Extract and plot the results of the Pyomo model
 
     Arguments:
@@ -537,12 +586,16 @@ def extract_plot_results(tc_exp_data, model, number_of_states=2):
     tc_exp_data: experimental data, TC_Lab_data instance
     model: Pyomo model
     number_of_states: int, number of states, default: 2
+    reparam: bool, True if reparameterization is used, default: False
+    save_plot: bool, save plot, default: False
+    file_name: str, file name to save if save_plot is true, default: None
 
     Returns:
     --------
     solution: solution from Pyomo model, extracted and stored in a TC_Lab_data instance
 
     """
+
 
     # For convenience, save in a shorter variable name
     if tc_exp_data is not None:
@@ -598,27 +651,27 @@ def extract_plot_results(tc_exp_data, model, number_of_states=2):
             color=colors["Th1"],
             linestyle='--',
         )
-    if exp.T2 is not None:
-        plt.scatter(
-            exp.time,
-            exp.T2,
-            marker='s',
-            label="$T_{S,2}$ measured",
-            alpha=0.5,
-            color=colors["T2"],
-        )
-    if mod.TS2_data is not None:
-        plt.plot(
-            mod.time, mod.TS2_data, label="$T_{S,2}$ predicted", color=colors["Ts2"]
-        )
-    if mod.T2 is not None:
-        plt.plot(
-            mod.time,
-            mod.T2,
-            label="$T_{H,2}$ predicted",
-            color=colors["Th2"],
-            linestyle='--',
-        )
+    # if exp.T2 is not None:
+    #     plt.scatter(
+    #         exp.time,
+    #         exp.T2,
+    #         marker='s',
+    #         label="$T_{S,2}$ measured",
+    #         alpha=0.5,
+    #         color=colors["T2"],
+    #     )
+    # if mod.TS2_data is not None:
+    #     plt.plot(
+    #         mod.time, mod.TS2_data, label="$T_{S,2}$ predicted", color=colors["Ts2"]
+    #     )
+    # if mod.T2 is not None:
+    #     plt.plot(
+    #         mod.time,
+    #         mod.T2,
+    #         label="$T_{H,2}$ predicted",
+    #         color=colors["Th2"],
+    #         linestyle='--',
+    #     )
 
     # if model.experiment_inputs is not None:
     # data_Th = []
@@ -647,28 +700,28 @@ def extract_plot_results(tc_exp_data, model, number_of_states=2):
 
     # subplot 2: control decision
     plt.subplot(2, 1, 2)
-    if exp.u1 is not None:
-        plt.scatter(
-            exp.time,
-            exp.u1,
-            marker='o',
-            label="$u_1$ measured",
-            color=colors['u1_data'],
-            alpha=0.5,
-        )
+    # if exp.u1 is not None:
+    #     plt.scatter(
+    #         exp.time,
+    #         exp.u1,
+    #         marker='o',
+    #         label="$u_1$ measured",
+    #         color=colors['u1_data'],
+    #         alpha=0.5,
+    #     )
     if mod.u1 is not None:
-        plt.plot(mod.time, mod.u1, label="$u_1$ predicted", color=colors["u1_mod"])
-    if exp.u2 is not None:
-        plt.scatter(
-            exp.time,
-            exp.u2,
-            marker='s',
-            label="$u_2$ measured",
-            color=colors["u2_data"],
-            alpha=0.5,
-        )
+        plt.plot(mod.time, mod.u1, label="$u$ profile", color=colors["u1_mod"])
+    # if exp.u2 is not None:
+    #     plt.scatter(
+    #         exp.time,
+    #         exp.u2,
+    #         marker='s',
+    #         label="$u_2$ measured",
+    #         color=colors["u2_data"],
+    #         alpha=0.5,
+    #     )
     if mod.u2 is not None:
-        plt.plot(mod.time, mod.u2, label="$u_2$ predicted", color=colors["u2_mod"])
+        plt.plot(mod.time, mod.u2, label="$u_2$ profile", color=colors["u2_mod"])
 
     plt.ylabel('Heater Power (%)')
     plt.xlabel('Time (s)')
@@ -676,22 +729,32 @@ def extract_plot_results(tc_exp_data, model, number_of_states=2):
     plt.grid(True)
 
     plt.tight_layout()
+
+    if save_plot:
+        plt.savefig(file_name, bbox_inches='tight', format="png", dpi=600)
     plt.show()
 
+    # Recover params if needed
+    if reparam:
+        theta_vals = {"beta_1": pyo.value(model.beta_1), "beta_2": pyo.value(model.beta_2), "beta_3": pyo.value(model.beta_3), "beta_4": pyo.value(model.beta_4)}
+        theta_vals = recover_standard_params(theta_vals, model.alpha, model.P1)
+    else:
+        theta_vals = {"Ua": pyo.value(model.Ua), "Ub": pyo.value(model.Ub), "inv_CpH": pyo.value(model.inv_CpH), "inv_CpS": pyo.value(model.inv_CpS)}
+
     print("Model parameters:")
-    print("Ua =", round(pyo.value(model.Ua), 4), "Watts/degC")
-    print("Ub =", round(pyo.value(model.Ub), 4), "Watts/degC")
+    print("Ua =", round(theta_vals["Ua"], 4), "Watts/degC")
+    print("Ub =", round(theta_vals["Ub"], 4), "Watts/degC")
     if number_of_states == 4:
         print("Uc =", round(pyo.value(model.Uc), 4), "Watts/degC")
-    print("CpH =", round(1 / pyo.value(model.inv_CpH), 4), "Joules/degC")
-    print("CpS =", round(1 / pyo.value(model.inv_CpS), 4), "Joules/degC")
+    print("CpH =", round(1 / theta_vals["inv_CpH"], 4), "Joules/degC")
+    print("CpS =", round(1 / theta_vals["inv_CpS"], 4), "Joules/degC")
 
     if hasattr(model, 'u1_period'):
         print("u1_period =", round(pyo.value(model.u1_period), 2), "minutes")
     if hasattr(model, 'u1_amplitude'):
         print("u1_amplitude =", round(pyo.value(model.u1_amplitude), 4), "% power")
 
-    print(" ")  # New line
+    print("")  # New line
 
     return mod
 
@@ -703,7 +766,7 @@ def results_summary(result):
 
     print("======Results Summary======")
     print("Four design criteria log10() value:")
-    print("A-optimality:", np.log10(np.trace(result)))
+    print("A-optimality:", np.log10(np.trace(np.linalg.inv(result))))
     print("D-optimality:", np.log10(np.linalg.det(result)))
     print("E-optimality:", np.log10(min_eig))
     print("Modified E-optimality:", np.log10(np.linalg.cond(result)))

@@ -27,7 +27,7 @@ except:
     pass
 
 
-def run_single_TC_Lab_experiment():
+def run_single_TC_Lab_experiment(include_Th=False, reparam=False, objective_option="determinant", save_plot=False, file_name=None):
     # Read in the data
     DATA_DIR = pathlib.Path(__file__).parent
     # file_path = DATA_DIR / "data" / "validation_experiment_env_2_step_50_run_1.csv"
@@ -42,7 +42,7 @@ def run_single_TC_Lab_experiment():
 
     # Here, we will induce a step size of 6 seconds, as to not give too many
     # degrees of freedom for experimental design.
-    skip = 15
+    skip = 30
 
     # Create the data object considering the new control points every 10 seconds
     tc_data = TC_Lab_data(
@@ -74,27 +74,20 @@ def run_single_TC_Lab_experiment():
         Tamb=df2['T1'].values[0],
     )
 
-    # TODO: Perform parameter estimation on the fly
-    theta_values = {
-        'Ua': 0.0417051733576387,
-        'Ub': 0.009440714239773074,
-        'inv_CpH': 0.1659093525658045,
-        'inv_CpS': 5.8357556063605465,
-    }
-
-    theta_values = TC_Lab_parmest([file_path, file_path_2], generate_Th=False)
+    theta_values = TC_Lab_parmest([file_path, file_path_2], generate_Th=False, reparam=reparam)
 
     # Create initial experiment
     experiment = TC_Lab_experiment(
         data=tc_data,
         theta_initial=theta_values,
         number_of_states=number_tclab_states,
-        include_Th=True,
+        include_Th=include_Th,
+        reparam=reparam,
     )
 
     # solver = pyo.SolverFactory("ipoptv2")
 
-    TC_Lab_DoE = DesignOfExperiments(
+    TC_Lab_DoE_exp1 = DesignOfExperiments(
         experiment=experiment,
         step=1e-2,
         scale_constant_value=1,
@@ -103,19 +96,20 @@ def run_single_TC_Lab_experiment():
     )
 
     # Analyze initial FIM for prior information
-    FIM = TC_Lab_DoE.compute_FIM(method='sequential')
+    FIM = TC_Lab_DoE_exp1.compute_FIM(method='sequential')
 
     # Create initial experiment
     experiment2 = TC_Lab_experiment(
-        data=tc_data,
+        data=tc_data2,
         theta_initial=theta_values,
         number_of_states=number_tclab_states,
-        include_Th=True,
+        include_Th=include_Th,
+        reparam=reparam,
     )
 
     # solver = pyo.SolverFactory("ipoptv2")
 
-    TC_Lab_DoE2 = DesignOfExperiments(
+    TC_Lab_DoE_exp2 = DesignOfExperiments(
         experiment=experiment2,
         step=1e-2,
         scale_constant_value=1,
@@ -124,26 +118,24 @@ def run_single_TC_Lab_experiment():
     )
 
     # Analyze initial FIM for prior information
-    FIM2 = TC_Lab_DoE.compute_FIM(method='sequential')
-
-    results_summary(FIM2)
+    FIM2 = TC_Lab_DoE_exp2.compute_FIM(method='sequential')
 
     # New experiment to perform experimental design
     doe_experiment = TC_Lab_experiment(
-        data=tc_data,
+        data=tc_data2,
         theta_initial=theta_values,
         number_of_states=number_tclab_states,
-        include_Th=True,
+        include_Th=include_Th,
     )
 
     # Create the design of experiments object using our experiment instance from above
-    TC_Lab_DoE_D = DesignOfExperiments(
+    TC_Lab_DoE = DesignOfExperiments(
         experiment=doe_experiment,
         step=1e-2,
         use_grey_box_objective=True,  # Comment out if normal
         scale_constant_value=1,
         scale_nominal_param_value=True,
-        objective_option="minimum_eigenvalue",  # Now we specify a type of objective, D-opt = "determinant"
+        objective_option=objective_option,  # Now we specify a type of objective, D-opt = "determinant"
         prior_FIM=FIM
         + FIM2,  # We use the prior information from the existing experiment!
         tee=True,
@@ -151,19 +143,71 @@ def run_single_TC_Lab_experiment():
     )
 
     # Run the experimental design
-    TC_Lab_DoE_D.run_doe()
+    TC_Lab_DoE.run_doe()
 
     # Extract the results
     dopt_pyomo_doe_results = extract_plot_results(
-        None, TC_Lab_DoE_D.model.scenario_blocks[0]
+        None, TC_Lab_DoE.model.scenario_blocks[0], save_plot=save_plot, file_name=file_name
     )
 
     # Print results summary
-    results_summary(TC_Lab_DoE_D.results['FIM'])
+    # print("\n\nFROM DOE\n")
+    # results_summary(TC_Lab_DoE.results['FIM'] - FIM - FIM2)
+    # print("\n\nSINE EXPERIMENT\n")
+    # results_summary(FIM)
+    # print("\n\nSTEP EXPERIMENT\n")
+    # results_summary(FIM2)
+    # print("\n\nPRIOR\n")
+    # results_summary(FIM + FIM2)
+    # print("\n\nFROM DOE with SINE\n")
+    # results_summary(TC_Lab_DoE.results['FIM'] - FIM2)
+    # print("\n\nFROM DOE with STEP\n")
+    # results_summary(TC_Lab_DoE.results['FIM'] - FIM)
+
+
+    return TC_Lab_DoE.results['FIM']
 
     ###################
     # End optimal DoE
 
 
 if __name__ == "__main__":
-    run_single_TC_Lab_experiment()
+    default_file_name = "optimal_profile_using_{}.png"
+    objective_options = ["determinant", "trace", "minimum_eigenvalue", "condition_number"]
+    # objective_options = ["determinant", ]
+    FIM_results_dict = {i: 0 for i in objective_options}
+
+    for objective_option in objective_options:
+        # Run the condition
+        temp_FIM = run_single_TC_Lab_experiment(reparam=True, objective_option=objective_option, save_plot=True, file_name=default_file_name.format(objective_option))
+
+        # Save the results
+        FIM_results_dict[objective_option] = temp_FIM
+
+    # Save the FIM data to a json file
+    with open('FIM_results_optimality_conditions.json', 'w') as f:
+        json.dump(FIM_results_dict, f)
+
+    overall_df = pd.DataFrame(columns=objective_options, index=objective_options)
+
+    # Report data and save optimality conditions to a file
+    for objective_option in objective_options:
+        results_summary(FIM_results_dict[objective_option])
+
+        result = FIM_results_dict[objective_option]
+
+        eigenvalues, eigenvectors = np.linalg.eig(result)
+        min_eig = min(eigenvalues)
+
+        A_opt = np.log10(np.trace(np.linalg.inv(result)))
+        D_opt = np.log10(np.linalg.det(result))
+        E_opt = np.log10(min_eig)
+        ME_opt = np.log10(np.linalg.cond(result))
+
+        overall_df.loc[[objective_option], ["trace"]] = A_opt
+        overall_df.loc[[objective_option], ["determinant"]] = D_opt
+        overall_df.loc[[objective_option], ["minimum_eigenvalue"]] = E_opt
+        overall_df.loc[[objective_option], ["condition_number"]] = ME_opt
+
+    overall_df.to_csv("TC_Lab_case_study_optimality_conditions_summary_results.csv")
+    print(overall_df)
