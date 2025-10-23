@@ -85,21 +85,12 @@ def run_greybox_optimization():
 
     # Define our own grey box solver
     grey_box_solver = pyo.SolverFactory("cyipopt")
-    # grey_box_solver.config.options["hessian_approximation"] = "limited-memory"
     grey_box_solver.config.options["linear_solver"] = "ma27"
     grey_box_solver.config.options['mu_strategy'] = "monotone"
-    # grey_box_solver.config.options['tol'] = 1e-4
-
-    try_things = {
-        "determinant": 1.78,  # 1.78 for optimal
-        "trace": 1.32,
-        "minimum_eigenvalue": 1.32,
-        "condition_number": 0.88,
-    }
 
     for objective_option in objective_options:
         experiment = RooneyBieglerExperimentDoE(
-            data={'hour': try_things[objective_option] * 0 + 4.5, 'y': 15}
+            data={'hour': 4.5, 'y': 15}
         )
 
         doe_obj_gb = DesignOfExperiments(
@@ -186,8 +177,8 @@ def run_greybox_optimization():
         for cols in range(3):
             ax[rows, cols].locator_params(axis='x', nbins=3)
             ax[rows, cols].locator_params(axis='y', nbins=5)
-    # plt.tight_layout()
-    # plt.savefig("batch_reactor_optimal_design.png", format='png', dpi=450)
+    plt.tight_layout()
+    plt.savefig("batch_reactor_optimal_design.png", format='png', dpi=450)
     plt.show()
 
 
