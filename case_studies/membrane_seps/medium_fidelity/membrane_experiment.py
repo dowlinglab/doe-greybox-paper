@@ -3,6 +3,7 @@ from matplotlib import pyplot as plt
 from pyomo.network import Arc
 import numpy as np
 import pandas as pd
+import logging
 import pyomo.contrib.parmest.parmest as parmest
 from idaes.core import (
     Component,
@@ -693,14 +694,14 @@ class MembraneExperiment(Experiment):
 
         # adding and fixing diafiltrate stream to mixer 2 inlet_1
         m.fs.mix2.inlet_1.flow_vol[0].fix(self.data["Q_diaf (m^3/hr)"])
-        m.fs.mix2.inlet_1.flow_vol[0].setub(1e-3)
+        m.fs.mix2.inlet_1.flow_vol[0].setub(27)
         m.fs.mix2.inlet_1.flow_vol[0].setub(33)
         m.fs.mix2.inlet_1.conc_mass_solute[0, "Li"].fix(0)
         m.fs.mix2.inlet_1.conc_mass_solute[0, "Co"].fix(0)
 
         # fixing fresh feed conditions at element 10 of stage 3
         m.fs.stage3.retentate_side_stream_state[0, 10].flow_vol.fix(self.data["Q_feed (m^3/hr)"])
-        m.fs.stage3.retentate_side_stream_state[0, 10].flow_vol.setlb(1e-3)
+        m.fs.stage3.retentate_side_stream_state[0, 10].flow_vol.setlb(90)
         m.fs.stage3.retentate_side_stream_state[0, 10].flow_vol.setub(110)
         m.fs.stage3.retentate_side_stream_state[0, 10].conc_mass_solute["Li"].fix(self.data["C_Li_feed (kg/m^3)"])
         m.fs.stage3.retentate_side_stream_state[0, 10].conc_mass_solute["Co"].fix(self.data["C_Co_feed (kg/m^3)"])
@@ -735,10 +736,17 @@ class MembraneExperiment(Experiment):
         m = self.model
 
         # Set experimental design bounds
-        m.fs.stage3.retentate_side_stream_state[0, 10].flow_vol.setlb = 90
-        m.fs.stage3.retentate_side_stream_state[0, 10].flow_vol.setub = 110
-        m.fs.mix2.inlet_1.flow_vol[0].setlb = 27
-        m.fs.mix2.inlet_1.flow_vol[0].setub = 33
+        m.fs.stage3.retentate_side_stream_state[0, 10].flow_vol.setlb(90)
+        m.fs.stage3.retentate_side_stream_state[0, 10].flow_vol.setub(110)
+        m.fs.mix2.inlet_1.flow_vol[0].setlb(27)
+        m.fs.mix2_inlet_flow_LB_con = pyo.Constraint(expr=m.fs.mix2.inlet_1.flow_vol[0] >= 27)
+        m.fs.mix2.inlet_1.flow_vol[0].setub(33)
+
+        # Set other experimental design bounds (concentrations)
+        m.fs.stage3.retentate_side_stream_state[0, 10].conc_mass_solute["Li"].setlb(0.1)
+        m.fs.stage3.retentate_side_stream_state[0, 10].conc_mass_solute["Li"].setub(10)
+        m.fs.stage3.retentate_side_stream_state[0, 10].conc_mass_solute["Co"].setlb(1)
+        m.fs.stage3.retentate_side_stream_state[0, 10].conc_mass_solute["Co"].setub(100)
 
         # solving model
         solver = pyo.SolverFactory("ipopt")
@@ -839,10 +847,12 @@ class MembraneExperiment(Experiment):
         # Add unknown parameter labels
         m.unknown_parameters = pyo.Suffix(direction=pyo.Suffix.LOCAL)
         # Add labels to all unknown parameters with nominal value as the value
-        m.unknown_parameters.update((k, k.value) for k in [m.fs.Lp, m.fs.constant_sieving_coeff["Li"],
+        m.unknown_parameters.update((k, k.value) for k in [m.fs.Lp,
+                                                           m.fs.constant_sieving_coeff["Li"],
                                                            m.fs.constant_sieving_coeff["Co"],
                                                            m.fs.ionic_strength_coeff["Li"],
-                                                           m.fs.ionic_strength_coeff["Co"]])
+                                                           m.fs.ionic_strength_coeff["Co"]
+        ])
 
         return m
 

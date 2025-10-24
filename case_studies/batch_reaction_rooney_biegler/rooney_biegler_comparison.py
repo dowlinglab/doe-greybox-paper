@@ -114,7 +114,7 @@ def rooney_biegler_sensitivity():
         cond_vals.append(np.linalg.cond(FIM))
         log_cond_vals.append(np.log(cond_vals[-1]))
 
-    fig, ax = plt.subplots(2, 3, figsize=(9, 8))
+    fig, ax = plt.subplots(2, 3, figsize=(9, 8), sharex=True)
 
     i_tot = 0
 
@@ -123,35 +123,35 @@ def rooney_biegler_sensitivity():
 
     j, i = get_row_col(i_tot, 2, 3)
     ax[j, i].plot(time_vals, det_vals)
-    ax[j, i].set_title("Log Determinant")
-    ax[j, i].set_xlabel("Sample Time (days)")
+    ax[j, i].set_title("D-opt")
+    #ax[j, i].set_xlabel("Sample Time (days)")
     ax[j, i].grid()
     i_tot += 1
 
     j, i = get_row_col(i_tot, 2, 3)
     ax[j, i].plot(time_vals, min_eig_vals)
-    ax[j, i].set_title("Minimum eigenvalue")
-    ax[j, i].set_xlabel("Sample Time (days)")
+    ax[j, i].set_title("E-opt")
+    #ax[j, i].set_xlabel("Sample Time (days)")
     ax[j, i].grid()
     i_tot += 1
 
     j, i = get_row_col(i_tot, 2, 3)
     ax[j, i].plot(time_vals, max_eig_vals)
     ax[j, i].set_title("Maximum eigenvalue")
-    ax[j, i].set_xlabel("Sample Time (days)")
+    #ax[j, i].set_xlabel("Sample Time (days)")
     ax[j, i].grid()
     i_tot += 1
 
     j, i = get_row_col(i_tot, 2, 3)
     ax[j, i].plot(time_vals, cond_vals)
-    ax[j, i].set_title("Condition Number")
+    ax[j, i].set_title("ME-opt")
     ax[j, i].set_xlabel("Sample Time (days)")
     ax[j, i].grid()
     i_tot += 1
 
     j, i = get_row_col(i_tot, 2, 3)
     ax[j, i].plot(time_vals, A_opt_vals)
-    ax[j, i].set_title("A-optimality")
+    ax[j, i].set_title("A-opt")
     ax[j, i].set_xlabel("Sample Time (days)")
     ax[j, i].grid()
     i_tot += 1

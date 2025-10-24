@@ -622,8 +622,8 @@ def extract_plot_results(tc_exp_data, model, number_of_states=2, reparam=False, 
         'Ts2': 'brown',  # model
         'u1_data': 'orange',  # data
         'u2_data': 'green',  # data
-        'u1_mod': 'red',  # model
-        'u2_mod': 'purple',  # model
+        'u1_mod': 'purple',  # model
+        'u2_mod': 'red',  # model
     }
 
     LW = 3.0  # line width

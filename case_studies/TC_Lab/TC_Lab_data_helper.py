@@ -7,6 +7,9 @@
 # Required imports
 from dataclasses import dataclass
 import pandas as pd
+import matplotlib.pyplot as plt
+import matplotlib.transforms as transforms
+from matplotlib.patches import Ellipse
 
 from pyomo.common.dependencies import numpy as np, pathlib
 
@@ -67,3 +70,201 @@ def helper(my_array, time):
             # Replace None with 0
             data2[t] = 0
     return data2
+
+
+def plot_pairwise_uncertainties(FIMs, theta_labels, theta_hat, n_std):
+    cov_mat_before = np.linalg.inv(FIMs[0])
+
+    n = len(theta_labels)
+
+    fig, ax = plt.subplots(ncols=n, nrows=n, figsize=(n*4, n*2.5))
+
+    for i in range(0, n):
+        # Loop over columns -- subdiagonal
+        for j in range(0, n):
+            curr_subplot = i + n * j + 1
+            if i == j or j < i:
+                plt.subplot(n, n, curr_subplot).remove()
+                continue
+            # Create subplots below the diagonal
+            plt.subplot(n, n, curr_subplot)
+
+            # Plot theta estimate
+            plt.scatter(theta_hat[i], theta_hat[j], s=10)
+            plt.xlabel(theta_labels[i], fontweight='bold')
+            plt.ylabel(theta_labels[j], fontweight='bold')
+
+            # Fix ticks
+            plt.tick_params(direction="in", top=True, right=True)
+
+            max_scale_x = 0
+            max_scale_y = 0
+
+            # Select rows from cov
+            rows = cov_mat_before[(i, j), :]
+
+            # Select columns from FIM
+            cov = rows[:, (i, j)]
+
+            # Draw non-dimensionalized
+            pearson = cov[0, 1] / np.sqrt(cov[0, 0] * cov[1, 1])
+            ell_radius_x = np.sqrt(1 + pearson)
+            ell_radius_y = np.sqrt(1 - pearson)
+            ellipse = Ellipse((0, 0), width=ell_radius_x * 2, height=ell_radius_y * 2,
+                              edgecolor='k', lw=3, facecolor=(0.5, 0.8, 0.9), alpha=0.5)
+
+            print(i, j, pearson)
+
+            # Calculating the standard deviation of x from
+            # the squareroot of the variance and multiplying
+            # with the given number of standard deviations.
+            scale_x = np.sqrt(cov[0, 0]) * n_std
+
+            # calculating the standard deviation of y
+            scale_y = np.sqrt(cov[1, 1]) * n_std
+
+            # transforming ellipse
+            transf = transforms.Affine2D() \
+                .rotate_deg(45) \
+                .scale(scale_x, scale_y) \
+                .translate(theta_hat[i], theta_hat[j])
+
+            # Plot ellipse
+            ax = plt.gca()
+            ellipse.set_transform(transf + ax.transData)
+            ax.add_patch(ellipse)
+
+            # Keep track of limits
+            max_scale_x = np.max([scale_x, max_scale_x])
+            max_scale_y = np.max([scale_y, max_scale_y])
+
+            # Adjust plot limits
+            plt.xlim([theta_hat[i] - max_scale_x, theta_hat[i] + max_scale_x])
+            plt.ylim([theta_hat[j] - max_scale_y, theta_hat[j] + max_scale_y])
+
+    if len(FIMs) > 1:
+        cov_mat_after = np.linalg.pinv(FIMs[1])
+        for i in range(0, n):
+            # Loop over columns -- subdiagonal
+            for j in range(0, n):
+                curr_subplot = i + n * j + 1
+                if i == j or j < i:
+                    plt.subplot(n, n, curr_subplot).remove()
+                    continue
+                # Create subplots below the diagonal
+                plt.subplot(n, n, curr_subplot)
+
+                # Plot theta estimate
+                plt.scatter(theta_hat[i], theta_hat[j], s=10)
+                plt.xlabel(theta_labels[i], fontweight='bold')
+                plt.ylabel(theta_labels[j], fontweight='bold')
+
+                # Fix ticks
+                plt.tick_params(direction="in", top=True, right=True)
+
+                max_scale_x = 0
+                max_scale_y = 0
+
+                # Select rows from cov
+                rows = cov_mat_after[(i, j), :]
+
+                # Select columns from FIM
+                cov = rows[:, (i, j)]
+
+                # Draw non-dimensionalized
+                pearson = cov[0, 1] / np.sqrt(cov[0, 0] * cov[1, 1])
+                ell_radius_x = np.sqrt(1 + pearson)
+                ell_radius_y = np.sqrt(1 - pearson)
+                ellipse = Ellipse((0, 0), width=ell_radius_x * 2, height=ell_radius_y * 2,
+                                  edgecolor='k', lw=3, facecolor=(0.4, 0.4, 0.4), alpha=0.7)
+
+                print(i, j, pearson)
+
+                # Plot theta estimate
+                plt.scatter(theta_hat[i], theta_hat[j], color='k', s=20)
+
+                # Calculating the standard deviation of x from
+                # the squareroot of the variance and multiplying
+                # with the given number of standard deviations.
+                scale_x = np.sqrt(cov[0, 0]) * n_std
+
+                # calculating the standard deviation of y
+                scale_y = np.sqrt(cov[1, 1]) * n_std
+
+                # transforming ellipse
+                transf = transforms.Affine2D() \
+                    .rotate_deg(45) \
+                    .scale(scale_x, scale_y) \
+                    .translate(theta_hat[i], theta_hat[j])
+
+                # Plot ellipse
+                ax = plt.gca()
+                ellipse.set_transform(transf + ax.transData)
+                ax.add_patch(ellipse)
+
+                # Keep track of limits
+                max_scale_x = np.max([scale_x, max_scale_x]) * 2
+                max_scale_y = np.max([scale_y, max_scale_y]) * 2
+
+                # Adjust plot limits
+                plt.xlim([theta_hat[i] - max_scale_x, theta_hat[i] + max_scale_x])
+                plt.ylim([theta_hat[j] - max_scale_y, theta_hat[j] + max_scale_y])
+
+    if len(FIMs) == 3:
+        for i in range(0, n):
+            # Loop over columns -- subdiagonal
+            for j in range(0, n):
+                curr_subplot = i + n * j + 1
+                if i == j or j < i:
+                    plt.subplot(n, n, curr_subplot).remove()
+                    continue
+                # Create subplots below the diagonal
+                plt.subplot(n, n, curr_subplot)
+
+                # Plot theta estimate
+                plt.scatter(theta_hat[i], theta_hat[j], s=10)
+                plt.xlabel(theta_labels[i], fontweight='bold')
+                plt.ylabel(theta_labels[j], fontweight='bold')
+
+                # Fix ticks
+                plt.tick_params(direction="in", top=True, right=True)
+
+                max_scale_x = 0
+                max_scale_y = 0
+
+                # Select rows from cov
+                rows = cov_mat_after[(i, j), :]
+
+                # Select columns from FIM
+                cov = rows[:, (i, j)]
+
+                # Draw non-dimensionalized
+                pearson = cov[0, 1] / np.sqrt(cov[0, 0] * cov[1, 1])
+                ell_radius_x = np.sqrt(1 + pearson)
+                ell_radius_y = np.sqrt(1 - pearson)
+                ellipse = Ellipse((0, 0), width=ell_radius_x * 2, height=ell_radius_y * 2,
+                                  edgecolor='k', lw=3, facecolor=(1, 1, 1), alpha=0.7)
+
+                # Plot theta estimate
+                plt.scatter(theta_hat[i], theta_hat[j], color='k', s=20)
+
+                # Calculating the standard deviation of x from
+                # the squareroot of the variance and multiplying
+                # with the given number of standard deviations.
+                scale_x = np.sqrt(cov[0, 0]) * n_std
+
+                # calculating the standard deviation of y
+                scale_y = np.sqrt(cov[1, 1]) * n_std
+
+                # transforming ellipse
+                transf = transforms.Affine2D() \
+                    .rotate_deg(45) \
+                    .scale(scale_x, scale_y) \
+                    .translate(theta_hat[i], theta_hat[j])
+
+                # Plot ellipse
+                ax = plt.gca()
+                ellipse.set_transform(transf + ax.transData)
+                ax.add_patch(ellipse)
+
+    plt.tight_layout()
