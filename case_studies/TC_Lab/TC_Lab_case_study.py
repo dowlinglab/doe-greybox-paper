@@ -149,7 +149,7 @@ def run_single_TC_Lab_experiment(include_Th=False, reparam=False, objective_opti
     )
 
     # Plot the pairwise uncertainties before and after
-    if objective_option == "minimum_eigenvalue":
+    if objective_option == "determinant":
         theta_values_normal_param = {
             "Ua": 0.0408,
             "Ub": 0.0303,
