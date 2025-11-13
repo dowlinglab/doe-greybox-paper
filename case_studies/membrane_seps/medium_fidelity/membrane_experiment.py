@@ -196,12 +196,12 @@ class MembraneExperiment(Experiment):
         m.fs.molar_mass["Co"].fix(0.05893)
 
         # add the constant sieving coefficient of the species
-        m.fs.constant_sieving_coeff = pyo.Var(m.fs.solutes, units=pyo.units.dimensionless)
+        m.fs.constant_sieving_coeff = pyo.Var(m.fs.solutes, units=pyo.units.dimensionless, bounds=(0, 1))
         m.fs.constant_sieving_coeff["Li"].fix(self.theta["fs.constant_sieving_coeff[Li]"])
         m.fs.constant_sieving_coeff["Co"].fix(self.theta["fs.constant_sieving_coeff[Co]"])
 
         # add the ionic strength coefficient of the species
-        m.fs.ionic_strength_coeff = pyo.Var(m.fs.solutes, units=pyo.units.m ** 3 / pyo.units.mol)
+        m.fs.ionic_strength_coeff = pyo.Var(m.fs.solutes, units=pyo.units.m ** 3 / pyo.units.mol, bounds=(1e-12, None))
         m.fs.ionic_strength_coeff["Li"].fix(self.theta["fs.ionic_strength_coeff[Li]"])
         m.fs.ionic_strength_coeff["Co"].fix(self.theta["fs.ionic_strength_coeff[Co]"])
 
@@ -276,7 +276,7 @@ class MembraneExperiment(Experiment):
         )
 
         # add the osmotic pressure
-        m.fs.stage1.osmotic_pressure = pyo.Var(m.fs.stage1.elements, units=pyo.units.Pa)
+        m.fs.stage1.osmotic_pressure = pyo.Var(m.fs.stage1.elements, units=pyo.units.Pa, bounds=(1e-8, 10**6))
 
         # define the osmotic pressure
         def osmotic_pressure_rule(b, s):
@@ -435,7 +435,7 @@ class MembraneExperiment(Experiment):
         m.fs.stage2.sieving_coeff_eqtn = pyo.Constraint(m.fs.stage2.elements, m.fs.solutes, rule=sieving_coeff_rule)
 
         # add the osmotic pressure
-        m.fs.stage2.osmotic_pressure = pyo.Var(m.fs.stage2.elements, units=pyo.units.Pa)
+        m.fs.stage2.osmotic_pressure = pyo.Var(m.fs.stage2.elements, units=pyo.units.Pa, bounds=(1e-8, 10**6))
         m.fs.stage2.osmotic_pressure_eqtn = pyo.Constraint(m.fs.stage2.elements, rule=osmotic_pressure_rule)
 
         # add the water flux
@@ -602,7 +602,7 @@ class MembraneExperiment(Experiment):
         m.fs.stage3.sieving_coeff_eqtn = pyo.Constraint(m.fs.stage3.elements, m.fs.solutes, rule=sieving_coeff_rule)
 
         # add the osmotic pressure
-        m.fs.stage3.osmotic_pressure = pyo.Var(m.fs.stage3.elements, units=pyo.units.Pa)
+        m.fs.stage3.osmotic_pressure = pyo.Var(m.fs.stage3.elements, units=pyo.units.Pa, bounds=(1e-8, 10**6))
         m.fs.stage3.osmotic_pressure_eqtn = pyo.Constraint(m.fs.stage3.elements, rule=osmotic_pressure_rule)
 
         # add the water flux
@@ -743,10 +743,10 @@ class MembraneExperiment(Experiment):
         m.fs.mix2.inlet_1.flow_vol[0].setub(33)
 
         # Set other experimental design bounds (concentrations)
-        m.fs.stage3.retentate_side_stream_state[0, 10].conc_mass_solute["Li"].setlb(0.1)
-        m.fs.stage3.retentate_side_stream_state[0, 10].conc_mass_solute["Li"].setub(10)
-        m.fs.stage3.retentate_side_stream_state[0, 10].conc_mass_solute["Co"].setlb(1)
-        m.fs.stage3.retentate_side_stream_state[0, 10].conc_mass_solute["Co"].setub(100)
+        m.fs.stage3.retentate_side_stream_state[0, 10].conc_mass_solute["Li"].setlb(1.5)
+        m.fs.stage3.retentate_side_stream_state[0, 10].conc_mass_solute["Li"].setub(2.0)
+        m.fs.stage3.retentate_side_stream_state[0, 10].conc_mass_solute["Co"].setlb(15)
+        m.fs.stage3.retentate_side_stream_state[0, 10].conc_mass_solute["Co"].setub(20)
 
         # solving model
         solver = pyo.SolverFactory("ipopt")
