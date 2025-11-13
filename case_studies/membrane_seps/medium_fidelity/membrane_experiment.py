@@ -196,12 +196,12 @@ class MembraneExperiment(Experiment):
         m.fs.molar_mass["Co"].fix(0.05893)
 
         # add the constant sieving coefficient of the species
-        m.fs.constant_sieving_coeff = pyo.Var(m.fs.solutes, units=pyo.units.dimensionless, bounds=(0, 1))
+        m.fs.constant_sieving_coeff = pyo.Var(m.fs.solutes, units=pyo.units.dimensionless,)# bounds=(0, 1))
         m.fs.constant_sieving_coeff["Li"].fix(self.theta["fs.constant_sieving_coeff[Li]"])
         m.fs.constant_sieving_coeff["Co"].fix(self.theta["fs.constant_sieving_coeff[Co]"])
 
         # add the ionic strength coefficient of the species
-        m.fs.ionic_strength_coeff = pyo.Var(m.fs.solutes, units=pyo.units.m ** 3 / pyo.units.mol, bounds=(1e-12, None))
+        m.fs.ionic_strength_coeff = pyo.Var(m.fs.solutes, units=pyo.units.m ** 3 / pyo.units.mol,)# bounds=(1e-12, None))
         m.fs.ionic_strength_coeff["Li"].fix(self.theta["fs.ionic_strength_coeff[Li]"])
         m.fs.ionic_strength_coeff["Co"].fix(self.theta["fs.ionic_strength_coeff[Co]"])
 

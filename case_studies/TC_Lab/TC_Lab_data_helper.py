@@ -77,22 +77,22 @@ def plot_pairwise_uncertainties(FIMs, theta_labels, theta_hat, n_std):
 
     n = len(theta_labels)
 
-    fig, ax = plt.subplots(ncols=n, nrows=n, figsize=(n*4, n*2.5))
+    fig, ax = plt.subplots(ncols=n-1, nrows=n-1, figsize=(n*4, n*2.5))
 
-    for i in range(0, n):
+    for ind1, i in enumerate(range(0, n-1)):
         # Loop over columns -- subdiagonal
-        for j in range(0, n):
-            curr_subplot = i + n * j + 1
-            if i == j or j < i:
-                plt.subplot(n, n, curr_subplot).remove()
+        for ind2, j in enumerate(range(1, n)):
+            curr_subplot = ind1 + (n - 1) * ind2 + 1
+            if ind1 > ind2:
+                plt.subplot(n-1, n-1, curr_subplot).remove()
                 continue
             # Create subplots below the diagonal
-            plt.subplot(n, n, curr_subplot)
+            plt.subplot(n-1, n-1, curr_subplot)
 
             # Plot theta estimate
             plt.scatter(theta_hat[i], theta_hat[j], s=10)
-            plt.xlabel(theta_labels[i], fontweight='bold')
-            plt.ylabel(theta_labels[j], fontweight='bold')
+            plt.xlabel(theta_labels[i], fontweight='bold', fontsize=25)
+            plt.ylabel(theta_labels[j], fontweight='bold', fontsize=25)
 
             # Fix ticks
             plt.tick_params(direction="in", top=True, right=True)
@@ -144,20 +144,20 @@ def plot_pairwise_uncertainties(FIMs, theta_labels, theta_hat, n_std):
 
     if len(FIMs) > 1:
         cov_mat_after = np.linalg.pinv(FIMs[1])
-        for i in range(0, n):
+        for ind1, i in enumerate(range(0, n-1)):
             # Loop over columns -- subdiagonal
-            for j in range(0, n):
-                curr_subplot = i + n * j + 1
-                if i == j or j < i:
-                    plt.subplot(n, n, curr_subplot).remove()
+            for ind2, j in enumerate(range(1, n)):
+                curr_subplot = ind1 + (n - 1) * ind2 + 1
+                if ind1 > ind2:
+                    plt.subplot(n - 1, n - 1, curr_subplot).remove()
                     continue
                 # Create subplots below the diagonal
-                plt.subplot(n, n, curr_subplot)
+                plt.subplot(n - 1, n - 1, curr_subplot)
 
                 # Plot theta estimate
                 plt.scatter(theta_hat[i], theta_hat[j], s=10)
-                plt.xlabel(theta_labels[i], fontweight='bold')
-                plt.ylabel(theta_labels[j], fontweight='bold')
+                plt.xlabel(theta_labels[i], fontweight='bold', fontsize=25)
+                plt.ylabel(theta_labels[j], fontweight='bold', fontsize=25)
 
                 # Fix ticks
                 plt.tick_params(direction="in", top=True, right=True)
@@ -211,20 +211,20 @@ def plot_pairwise_uncertainties(FIMs, theta_labels, theta_hat, n_std):
                 plt.ylim([theta_hat[j] - max_scale_y, theta_hat[j] + max_scale_y])
 
     if len(FIMs) == 3:
-        for i in range(0, n):
+        for ind1, i in enumerate(range(0, n - 1)):
             # Loop over columns -- subdiagonal
-            for j in range(0, n):
-                curr_subplot = i + n * j + 1
-                if i == j or j < i:
-                    plt.subplot(n, n, curr_subplot).remove()
+            for ind2, j in enumerate(range(1, n)):
+                curr_subplot = ind1 + (n - 1) * ind2 + 1
+                if ind1 > ind2:
+                    plt.subplot(n - 1, n - 1, curr_subplot).remove()
                     continue
                 # Create subplots below the diagonal
-                plt.subplot(n, n, curr_subplot)
+                plt.subplot(n - 1, n - 1, curr_subplot)
 
                 # Plot theta estimate
                 plt.scatter(theta_hat[i], theta_hat[j], s=10)
-                plt.xlabel(theta_labels[i], fontweight='bold')
-                plt.ylabel(theta_labels[j], fontweight='bold')
+                plt.xlabel(theta_labels[i], fontweight='bold', fontsize=25)
+                plt.ylabel(theta_labels[j], fontweight='bold', fontsize=25)
 
                 # Fix ticks
                 plt.tick_params(direction="in", top=True, right=True)
