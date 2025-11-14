@@ -182,7 +182,7 @@ class MembraneExperiment(Experiment):
         m.fs.pressure_drop.fix(1e6)
 
         # add the water permeability constant
-        m.fs.Lp = pyo.Var(units=pyo.units.m / (pyo.units.hour * pyo.units.Pa))
+        m.fs.Lp = pyo.Var(units=pyo.units.m / (pyo.units.hour * pyo.units.Pa), bounds=(1e-8, None))
         m.fs.Lp.fix(self.theta["fs.Lp"])
 
         # add the valency of the species
