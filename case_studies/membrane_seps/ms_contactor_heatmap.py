@@ -15,7 +15,7 @@ import matplotlib.transforms as transforms
 
 SMALL_SIZE = 16
 MEDIUM_SIZE = 18
-BIGGER_SIZE = 24
+BIGGER_SIZE = 20
 
 plt.rc('font', size=SMALL_SIZE)  # controls default text sizes
 plt.rc('axes', titlesize=SMALL_SIZE)  # fontsize of the axes title
@@ -31,22 +31,22 @@ def plot_pairwise_uncertainties(FIMs, theta_labels, theta_hat, n_std):
 
     n = len(theta_labels)
 
-    fig, ax = plt.subplots(ncols=n, nrows=n, figsize=(n*4, n*2.5))
+    fig, ax = plt.subplots(ncols=n-1, nrows=n-1, figsize=(n*4, n*2.5))
 
-    for i in range(0, n):
+    for ind1, i in enumerate(range(0, n - 1)):
         # Loop over columns -- subdiagonal
-        for j in range(0, n):
-            curr_subplot = i + n * j + 1
-            if i == j or j < i:
-                plt.subplot(n, n, curr_subplot).remove()
+        for ind2, j in enumerate(range(1, n)):
+            curr_subplot = ind1 + (n - 1) * ind2 + 1
+            if ind1 > ind2:
+                plt.subplot(n - 1, n - 1, curr_subplot).remove()
                 continue
             # Create subplots below the diagonal
-            plt.subplot(n, n, curr_subplot)
+            plt.subplot(n - 1, n - 1, curr_subplot)
 
             # Plot theta estimate
             plt.scatter(theta_hat[i], theta_hat[j], s=10)
-            plt.xlabel(theta_labels[i], fontweight='bold')
-            plt.ylabel(theta_labels[j], fontweight='bold')
+            plt.xlabel(theta_labels[i], fontweight='bold', fontsize=25)
+            plt.ylabel(theta_labels[j], fontweight='bold', fontsize=25)
 
             # Fix ticks
             plt.tick_params(direction="in", top=True, right=True)
@@ -98,20 +98,20 @@ def plot_pairwise_uncertainties(FIMs, theta_labels, theta_hat, n_std):
 
     if len(FIMs) > 1:
         cov_mat_after = np.linalg.pinv(FIMs[1])
-        for i in range(0, n):
+        for ind1, i in enumerate(range(0, n - 1)):
             # Loop over columns -- subdiagonal
-            for j in range(0, n):
-                curr_subplot = i + n * j + 1
-                if i == j or j < i:
-                    plt.subplot(n, n, curr_subplot).remove()
+            for ind2, j in enumerate(range(1, n)):
+                curr_subplot = ind1 + (n - 1) * ind2 + 1
+                if ind1 > ind2:
+                    plt.subplot(n - 1, n - 1, curr_subplot).remove()
                     continue
                 # Create subplots below the diagonal
-                plt.subplot(n, n, curr_subplot)
+                plt.subplot(n - 1, n - 1, curr_subplot)
 
                 # Plot theta estimate
                 plt.scatter(theta_hat[i], theta_hat[j], s=10)
-                plt.xlabel(theta_labels[i], fontweight='bold')
-                plt.ylabel(theta_labels[j], fontweight='bold')
+                plt.xlabel(theta_labels[i], fontweight='bold', fontsize=25)
+                plt.ylabel(theta_labels[j], fontweight='bold', fontsize=25)
 
                 # Fix ticks
                 plt.tick_params(direction="in", top=True, right=True)
@@ -245,11 +245,11 @@ design_ranges = {
 }
 
 # Data from parmest estimate:
-theta_hat = {"fs.Lp":2.97e-7,
-             "fs.constant_sieving_coeff[Li]":1.33,
-             "fs.constant_sieving_coeff[Co]":0.49,
-             "fs.ionic_strength_coeff[Li]":5.14e-4,
-             "fs.ionic_strength_coeff[Co]":1.34e-4
+theta_hat = {"fs.Lp":2.998e-7,
+             "fs.constant_sieving_coeff[Li]":1.001,
+             "fs.constant_sieving_coeff[Co]":0.3962,
+             "fs.ionic_strength_coeff[Li]":5.024e-4,
+             "fs.ionic_strength_coeff[Co]":9.25e-5
 }
 
 # Default design
@@ -328,28 +328,39 @@ for ind, objective_option in enumerate(objective_options):
     optimal_FIMs[ind] = ms_contactor_DoE.results["FIM"]
     optimal_points[ind] = ms_contactor_DoE.results["Experiment Design"]
 
-    # # Round 2
-    # experiment = MembraneExperiment(data=membrane_design, theta=theta_hat)
-    #
-    # ms_contactor_DoE_2 = DesignOfExperiments(
-    #     experiment,
-    #     step=1e-2,
-    #     objective_option=objective_option,
-    #     use_grey_box_objective=True,
-    #     scale_constant_value=1,
-    #     scale_nominal_param_value=True,
-    #     prior_FIM=np.asarray(optimal_FIMs[ind]),
-    #     grey_box_solver=grey_box_solver,
-    #     grey_box_tee=True,
-    # )
-    #
-    # ms_contactor_DoE_2.run_doe()
-    #
-    # optimal_FIMs_round_2[ind] = ms_contactor_DoE_2.results["FIM"]
-    # optimal_points_round_2[ind] = ms_contactor_DoE_2.results["Experiment Design"]
+    if objective_option == "minimum_eigenvalue":
+        #ms_contactor_DoE.model.scenario_blocks[0].fs.stage3.pprint()
+        ms_contactor_DoE.model.scenario_blocks[0].fs.stage1.osmotic_pressure.pprint()
+        ms_contactor_DoE.model.scenario_blocks[0].fs.stage2.osmotic_pressure.pprint()
+        ms_contactor_DoE.model.scenario_blocks[0].fs.stage3.osmotic_pressure.pprint()
+
+        plt.plot()
+        plt.show()
+        plt.clf()
+
+    # Round 2
+    experiment = MembraneExperiment(data=membrane_design, theta=theta_hat)
+
+    ms_contactor_DoE_2 = DesignOfExperiments(
+        experiment,
+        step=1e-2,
+        objective_option=objective_option,
+        use_grey_box_objective=True,
+        scale_constant_value=1,
+        scale_nominal_param_value=True,
+        prior_FIM=np.asarray(optimal_FIMs[ind]),
+        grey_box_solver=grey_box_solver,
+        grey_box_tee=True,
+    )
+
+    ms_contactor_DoE_2.run_doe()
+
+    optimal_FIMs_round_2[ind] = ms_contactor_DoE_2.results["FIM"]
+    optimal_points_round_2[ind] = ms_contactor_DoE_2.results["Experiment Design"]
 
 theta_labels = ["$L_p$", "$S_{Li}$", "$S_{Co}$", "$\delta_{Li}$", "$\delta_{Co}$"]
-theta_values = [2.47e-7, 1.33, 0.2, 0.000514, 0.000134]
+theta_values = [2.998e-7, 1.001, 0.3962, 0.0005024, 9.250e-5]# 0.00000626]
+#theta_values = theta_hat.values()
 
 plot_pairwise_uncertainties([FIM_prior, optimal_FIMs[2]], theta_labels, theta_values, n_std=1)
 plt.savefig("uncertainty_reduction.png")
@@ -358,6 +369,11 @@ plt.show()
 plot_pairwise_uncertainties([FIM_prior, ], theta_labels, theta_values, n_std=1)
 plt.savefig("only_prior_uncertainty_comparison.png")
 plt.show()
+#
+# design_ranges = {
+#     "feed_flow": [9, 9.2, 9.4, 9.6],
+#     "diafiltrate_flow": [36, 35, 34, 33],
+# }
 
 # Loop through the values
 FIM_results = []
@@ -379,6 +395,8 @@ for diafiltrate_flow in design_ranges["diafiltrate_flow"]:
         data_feed_flow.append(feed_flow)
         data_diafiltrate_flow.append(diafiltrate_flow)
 
+        membrane_design["C_Li_feed (kg/m^3)"] = 2.
+        membrane_design["C_Co_feed (kg/m^3)"] = 20.
         membrane_design["Q_feed (m^3/hr)"] = feed_flow
         membrane_design["Q_diaf (m^3/hr)"] = diafiltrate_flow
 
@@ -406,8 +424,8 @@ for diafiltrate_flow in design_ranges["diafiltrate_flow"]:
 # Heatmap Plotting Function
 def plot_heatmap(data, title, y_label, x_label, colorbar_label, take_the_log=False):
     # set heatmap x,y ranges
-    x_tick_labels = np.sort(np.unique(data[:, 0]))
-    y_tick_labels = np.sort(np.unique(data[:, 1]))[::-1]
+    x_tick_labels = np.sort(np.unique(data[:, 0]))[::-1]
+    y_tick_labels = np.sort(np.unique(data[:, 1]))
 
     # optimality-values
     opt_vals = np.asarray(data[:, 2]).reshape(len(x_tick_labels), len(y_tick_labels))
@@ -450,14 +468,15 @@ for i in FIM_results:
 FIM_metrics_np = np.asarray(FIM_metrics)
 
 # X and Y axis labels
-x_label = "Feed flow [m$^3$/min$^{-1}$]"
-y_label = "Diafiltrate flow [m$^3$/min$^{-1}$]"
+x_label = "Diafiltrate flow [m$^3$/min$^{-1}$]"
+y_label = "Feed flow [m$^3$/min$^{-1}$]"
 
 # Draw A-optimality figure
 data_A = np.zeros((len(FIM_metrics), 3))
 data_A[:, 1] = data_feed_flow
 data_A[:, 0] = data_diafiltrate_flow
 data_A[:, 2] = FIM_metrics_np[:, 0]
+#data_A[:, 2] = np.asarray([i for i in range(len(data_feed_flow))])
 
 plot_heatmap(data_A, "A-optimality", y_label, x_label, r"trace(FIM$^{-1}$)")
 plt.tight_layout()
@@ -503,7 +522,9 @@ plt.close()
 
 print(optimal_points)
 print(optimal_FIMs)
+print("\n\nROUND 1")
 print(np.asarray(optimal_FIMs[2]))
 print(np.asarray(FIM_prior))
-# print(optimal_points_round_2)
-# print(optimal_FIMs_round_2)
+print("\n\nROUND 2")
+print(optimal_points_round_2)
+print(optimal_FIMs_round_2)

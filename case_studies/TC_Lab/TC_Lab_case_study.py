@@ -237,13 +237,22 @@ def run_single_TC_Lab_experiment(include_Th=False, reparam=False, objective_opti
 
         # Run the experimental design
         new_FIM = TC_Lab_DoE_normal_param_eval.compute_FIM(method='sequential')
+        print("\n\n\n\n\n\n\n\n\n\n")
+        print(prior_info_normal_param)
+        print("\n\n\n\n\n\n\n\n\n\n")
+
+        print("\n\n\n\n\n\n\n\n\n\n")
+        print(prior_info_normal_param + new_FIM)
+        print("\n\n\n\n\n\n\n\n\n\n")
+
+        theta_labels = [r"$\boldsymbol{U_a}$", r"$\boldsymbol{U_b}$", r"$\boldsymbol{Cp_H^{-1}}$", r"$\boldsymbol{Cp_S^{-1}}$"]
 
         # Plot the Pairwise Uncertainties
-        plot_pairwise_uncertainties([prior_info_normal_param, prior_info_normal_param + new_FIM], list(theta_values_normal_param.keys()), list(theta_values_normal_param.values()), n_std=1)
+        plot_pairwise_uncertainties([prior_info_normal_param, prior_info_normal_param + new_FIM], theta_labels, list(theta_values_normal_param.values()), n_std=1)
         plt.savefig("uncertainty_reduction_TC_Lab.png")
         plt.show()
 
-        plot_pairwise_uncertainties([prior_info_normal_param, ], list(theta_values_normal_param.keys()), list(theta_values_normal_param.values()), n_std=1)
+        plot_pairwise_uncertainties([prior_info_normal_param, ], theta_labels, list(theta_values_normal_param.values()), n_std=1)
         plt.savefig("only_prior_uncertainty_comparison_TC_Lab.png")
         plt.show()
 
