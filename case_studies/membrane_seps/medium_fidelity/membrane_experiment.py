@@ -120,8 +120,8 @@ class MembraneExperiment(Experiment):
         """
         self.data = data
         if theta is None:
-            self.theta = {"fs.Lp":1e-7, "fs.constant_sieving_coeff[Li]":1.0, "fs.constant_sieving_coeff[Co]":0.2,
-                                  "fs.ionic_strength_coeff[Li]":3e-4, "fs.ionic_strength_coeff[Co]":1e-4}
+            self.theta = {"fs.Lp":1e-7, "fs.constant_sieving_coeff[Li]":1.0, "fs.constant_sieving_coeff[Co]":0.4,
+                                  "fs.ionic_strength_coeff[Li]":8e-4, "fs.ionic_strength_coeff[Co]":4e-4}
         else:
             self.theta = theta
         self.model = None
@@ -196,12 +196,12 @@ class MembraneExperiment(Experiment):
         m.fs.molar_mass["Co"].fix(0.05893)
 
         # add the constant sieving coefficient of the species
-        m.fs.constant_sieving_coeff = pyo.Var(m.fs.solutes, units=pyo.units.dimensionless, bounds=(0, 1))
+        m.fs.constant_sieving_coeff = pyo.Var(m.fs.solutes, units=pyo.units.dimensionless, bounds=(1e-8, None))
         m.fs.constant_sieving_coeff["Li"].fix(self.theta["fs.constant_sieving_coeff[Li]"])
         m.fs.constant_sieving_coeff["Co"].fix(self.theta["fs.constant_sieving_coeff[Co]"])
 
         # add the ionic strength coefficient of the species
-        m.fs.ionic_strength_coeff = pyo.Var(m.fs.solutes, units=pyo.units.m ** 3 / pyo.units.mol, bounds=(1e-12, None))
+        m.fs.ionic_strength_coeff = pyo.Var(m.fs.solutes, units=pyo.units.m ** 3 / pyo.units.mol, bounds=(1e-8, None))
         m.fs.ionic_strength_coeff["Li"].fix(self.theta["fs.ionic_strength_coeff[Li]"])
         m.fs.ionic_strength_coeff["Co"].fix(self.theta["fs.ionic_strength_coeff[Co]"])
 
@@ -243,7 +243,7 @@ class MembraneExperiment(Experiment):
 
         # adding species sieving coefficient
         m.fs.stage1.sieving_coefficient = pyo.Var(m.fs.stage1.elements, m.fs.solutes,
-                                                  units=pyo.units.dimensionless)
+                                                  units=pyo.units.dimensionless, bounds=(1e-8, None))
 
         # define the sieving coeffficient
         def sieving_coeff_rule(b, s, j):
@@ -276,7 +276,7 @@ class MembraneExperiment(Experiment):
         )
 
         # add the osmotic pressure
-        m.fs.stage1.osmotic_pressure = pyo.Var(m.fs.stage1.elements, units=pyo.units.Pa, bounds=(1e-8, 10**6))
+        m.fs.stage1.osmotic_pressure = pyo.Var(m.fs.stage1.elements, units=pyo.units.Pa)
 
         # define the osmotic pressure
         def osmotic_pressure_rule(b, s):
@@ -313,7 +313,7 @@ class MembraneExperiment(Experiment):
         )
 
         # add the water flux
-        m.fs.stage1.water_flux = pyo.Var(m.fs.stage1.elements, units=pyo.units.m / pyo.units.hour)
+        m.fs.stage1.water_flux = pyo.Var(m.fs.stage1.elements, units=pyo.units.m / pyo.units.hour, bounds=(1e-8, None))
 
         # define the water flux
         def water_flux_rule(b, s):
@@ -431,15 +431,16 @@ class MembraneExperiment(Experiment):
         m.fs.stage2.ionic_strength_eqtn = pyo.Constraint(m.fs.stage2.elements, rule=ionic_strength_rule)
 
         # add the sieving coefficient
-        m.fs.stage2.sieving_coefficient = pyo.Var(m.fs.stage2.elements, m.fs.solutes, units=pyo.units.dimensionless)
+        m.fs.stage2.sieving_coefficient = pyo.Var(m.fs.stage2.elements, m.fs.solutes,
+                                                  units=pyo.units.dimensionless, bounds=(1e-8, None))
         m.fs.stage2.sieving_coeff_eqtn = pyo.Constraint(m.fs.stage2.elements, m.fs.solutes, rule=sieving_coeff_rule)
 
         # add the osmotic pressure
-        m.fs.stage2.osmotic_pressure = pyo.Var(m.fs.stage2.elements, units=pyo.units.Pa, bounds=(1e-8, 10**6))
+        m.fs.stage2.osmotic_pressure = pyo.Var(m.fs.stage2.elements, units=pyo.units.Pa)
         m.fs.stage2.osmotic_pressure_eqtn = pyo.Constraint(m.fs.stage2.elements, rule=osmotic_pressure_rule)
 
         # add the water flux
-        m.fs.stage2.water_flux = pyo.Var(m.fs.stage2.elements, units=pyo.units.m / pyo.units.hour)
+        m.fs.stage2.water_flux = pyo.Var(m.fs.stage2.elements, units=pyo.units.m / pyo.units.hour, bounds=(1e-8, None))
         m.fs.stage2.water_flux_eqtn = pyo.Constraint(m.fs.stage2.elements, rule=water_flux_rule)
 
         # adding solvent flux constraint
@@ -598,15 +599,16 @@ class MembraneExperiment(Experiment):
         m.fs.stage3.ionic_strength_eqtn = pyo.Constraint(m.fs.stage3.elements, rule=stage3_ionic_strength_rule)
 
         # add the sieving coefficient
-        m.fs.stage3.sieving_coefficient = pyo.Var(m.fs.stage3.elements, m.fs.solutes, units=pyo.units.dimensionless)
+        m.fs.stage3.sieving_coefficient = pyo.Var(m.fs.stage3.elements, m.fs.solutes,
+                                                  units=pyo.units.dimensionless, bounds=(1e-8, None))
         m.fs.stage3.sieving_coeff_eqtn = pyo.Constraint(m.fs.stage3.elements, m.fs.solutes, rule=sieving_coeff_rule)
 
         # add the osmotic pressure
-        m.fs.stage3.osmotic_pressure = pyo.Var(m.fs.stage3.elements, units=pyo.units.Pa, bounds=(1e-8, 10**6))
+        m.fs.stage3.osmotic_pressure = pyo.Var(m.fs.stage3.elements, units=pyo.units.Pa)
         m.fs.stage3.osmotic_pressure_eqtn = pyo.Constraint(m.fs.stage3.elements, rule=osmotic_pressure_rule)
 
         # add the water flux
-        m.fs.stage3.water_flux = pyo.Var(m.fs.stage3.elements, units=pyo.units.m / pyo.units.hour)
+        m.fs.stage3.water_flux = pyo.Var(m.fs.stage3.elements, units=pyo.units.m / pyo.units.hour, bounds=(1e-8, None))
         m.fs.stage3.water_flux_eqtn = pyo.Constraint(m.fs.stage3.elements, rule=water_flux_rule)
 
         # adding solvent flux constraint
@@ -881,7 +883,7 @@ def membrane_parameter_estimation():
         exp_list.append(new_exp)
 
     # create parmest Estimator object
-    pest = parmest.Estimator(exp_list, obj_function='SSE_weighted')
+    pest = parmest.Estimator(exp_list, obj_function='SSE_weighted', tee=True)
 
     # estimate the parameters
     obj, theta = pest.theta_est()
