@@ -402,7 +402,7 @@ for diafiltrate_flow in design_ranges["diafiltrate_flow"]:
 
         print("\n\n\nMAKE EXPERIMENT\n\n\n")
 
-        doe_experiment = MembraneExperiment(data=membrane_design)
+        doe_experiment = MembraneExperiment(data=membrane_design, theta=theta_hat)
 
         solver = pyo.SolverFactory("ipopt")
         solver.options["linear_solver"] = "ma27"
