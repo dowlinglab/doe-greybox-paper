@@ -9,8 +9,9 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 import os.path
+import copy
 
-from matplotlib.patches import Ellipse
+from matplotlib.patches import Ellipse, Patch
 import matplotlib.transforms as transforms
 
 SMALL_SIZE = 16
@@ -96,6 +97,73 @@ def plot_pairwise_uncertainties(FIMs, theta_labels, theta_hat, n_std):
             plt.xlim([theta_hat[i] - max_scale_x, theta_hat[i] + max_scale_x])
             plt.ylim([theta_hat[j] - max_scale_y, theta_hat[j] + max_scale_y])
 
+    if len(FIMs) == 3:
+        cov_mat_after = np.linalg.pinv(FIMs[2])
+        for ind1, i in enumerate(range(0, n - 1)):
+            # Loop over columns -- subdiagonal
+            for ind2, j in enumerate(range(1, n)):
+                curr_subplot = ind1 + (n - 1) * ind2 + 1
+                if ind1 > ind2:
+                    plt.subplot(n - 1, n - 1, curr_subplot).remove()
+                    continue
+                # Create subplots below the diagonal
+                plt.subplot(n - 1, n - 1, curr_subplot)
+
+                # Plot theta estimate
+                plt.scatter(theta_hat[i], theta_hat[j], s=10)
+                plt.xlabel(theta_labels[i], fontweight='bold')
+                plt.ylabel(theta_labels[j], fontweight='bold')
+
+                # Fix ticks
+                plt.tick_params(direction="in", top=True, right=True)
+
+                max_scale_x = 0
+                max_scale_y = 0
+
+                # Select rows from cov
+                rows = cov_mat_after[(i, j), :]
+
+                # Select columns from FIM
+                cov = rows[:, (i, j)]
+
+                # Draw non-dimensionalized
+                pearson = cov[0, 1] / np.sqrt(cov[0, 0] * cov[1, 1])
+                ell_radius_x = np.sqrt(1 + pearson)
+                ell_radius_y = np.sqrt(1 - pearson)
+                ellipse = Ellipse((0, 0), width=ell_radius_x * 2, height=ell_radius_y * 2,
+                                  edgecolor='red', linestyle='--', hatch='+', lw=3, facecolor=(0.8, 0.8, 0.8), alpha=0.7)
+
+                # Plot theta estimate
+                plt.scatter(theta_hat[i], theta_hat[j], color='k', s=20)
+
+                # Calculating the standard deviation of x from
+                # the squareroot of the variance and multiplying
+                # with the given number of standard deviations.
+                scale_x = np.sqrt(cov[0, 0]) * n_std
+
+                # calculating the standard deviation of y
+                scale_y = np.sqrt(cov[1, 1]) * n_std
+
+                # transforming ellipse
+                transf = transforms.Affine2D() \
+                    .rotate_deg(45) \
+                    .scale(scale_x, scale_y) \
+                    .translate(theta_hat[i], theta_hat[j])
+
+                # Plot ellipse
+                ax = plt.gca()
+                ellipse.set_transform(transf + ax.transData)
+                ax.add_patch(ellipse)
+
+                max_scale_x = np.max([scale_x, max_scale_x]) * 2
+                max_scale_y = np.max([scale_y, max_scale_y]) * 2
+
+                plt.xlim([theta_hat[i] - max_scale_x, theta_hat[i] + max_scale_x])
+                plt.ylim([theta_hat[j] - max_scale_y, theta_hat[j] + max_scale_y])
+
+                max_scale_x = max_scale_x / 2
+                max_scale_y = max_scale_y / 2
+
     if len(FIMs) > 1:
         cov_mat_after = np.linalg.pinv(FIMs[1])
         for ind1, i in enumerate(range(0, n - 1)):
@@ -116,8 +184,9 @@ def plot_pairwise_uncertainties(FIMs, theta_labels, theta_hat, n_std):
                 # Fix ticks
                 plt.tick_params(direction="in", top=True, right=True)
 
-                max_scale_x = 0
-                max_scale_y = 0
+                if len(FIMs) < 3:
+                    max_scale_x = 0
+                    max_scale_y = 0
 
                 # Select rows from cov
                 rows = cov_mat_after[(i, j), :]
@@ -161,65 +230,19 @@ def plot_pairwise_uncertainties(FIMs, theta_labels, theta_hat, n_std):
                 max_scale_y = np.max([scale_y, max_scale_y]) * 2
 
                 # Adjust plot limits
-                plt.xlim([theta_hat[i] - max_scale_x, theta_hat[i] + max_scale_x])
-                plt.ylim([theta_hat[j] - max_scale_y, theta_hat[j] + max_scale_y])
+                if len(FIMs) < 3:
+                    plt.xlim([theta_hat[i] - max_scale_x, theta_hat[i] + max_scale_x])
+                    plt.ylim([theta_hat[j] - max_scale_y, theta_hat[j] + max_scale_y])
 
     if len(FIMs) == 3:
-        for i in range(0, n):
-            # Loop over columns -- subdiagonal
-            for j in range(0, n):
-                curr_subplot = i + n * j + 1
-                if i == j or j < i:
-                    plt.subplot(n, n, curr_subplot).remove()
-                    continue
-                # Create subplots below the diagonal
-                plt.subplot(n, n, curr_subplot)
+        # Add legend
+        ellipse_legend = [
+            Patch(edgecolor='gray', facecolor=(0.5, 0.8, 0.9), alpha=0.5, label='Original Experiments'),
+            Patch(edgecolor='k', lw=3, facecolor=(0.4, 0.4, 0.4), alpha=0.7, label='With Optimal Experiment'),
+            Patch(edgecolor='red', linestyle='--', hatch='+', lw=3, facecolor=(0.8, 0.8, 0.8), alpha=0.7, label='With Model-Free Experiment')
+        ]
 
-                # Plot theta estimate
-                plt.scatter(theta_hat[i], theta_hat[j], s=10)
-                plt.xlabel(theta_labels[i], fontweight='bold')
-                plt.ylabel(theta_labels[j], fontweight='bold')
-
-                # Fix ticks
-                plt.tick_params(direction="in", top=True, right=True)
-
-                max_scale_x = 0
-                max_scale_y = 0
-
-                # Select rows from cov
-                rows = cov_mat_after[(i, j), :]
-
-                # Select columns from FIM
-                cov = rows[:, (i, j)]
-
-                # Draw non-dimensionalized
-                pearson = cov[0, 1] / np.sqrt(cov[0, 0] * cov[1, 1])
-                ell_radius_x = np.sqrt(1 + pearson)
-                ell_radius_y = np.sqrt(1 - pearson)
-                ellipse = Ellipse((0, 0), width=ell_radius_x * 2, height=ell_radius_y * 2,
-                                  edgecolor='k', lw=3, facecolor=(1, 1, 1), alpha=0.7)
-
-                # Plot theta estimate
-                plt.scatter(theta_hat[i], theta_hat[j], color='k', s=20)
-
-                # Calculating the standard deviation of x from
-                # the squareroot of the variance and multiplying
-                # with the given number of standard deviations.
-                scale_x = np.sqrt(cov[0, 0]) * n_std
-
-                # calculating the standard deviation of y
-                scale_y = np.sqrt(cov[1, 1]) * n_std
-
-                # transforming ellipse
-                transf = transforms.Affine2D() \
-                    .rotate_deg(45) \
-                    .scale(scale_x, scale_y) \
-                    .translate(theta_hat[i], theta_hat[j])
-
-                # Plot ellipse
-                ax = plt.gca()
-                ellipse.set_transform(transf + ax.transData)
-                ax.add_patch(ellipse)
+        fig.legend(handles=ellipse_legend, loc='upper right', bbox_to_anchor=(0.9, 0.9), fontsize=24)
 
     plt.tight_layout()
 
@@ -244,12 +267,12 @@ design_ranges = {
     "diafiltrate_flow": [33, 32, 31, 30, 29, 28, 27],
 }
 
-# Data from parmest estimate:
-theta_hat = {"fs.Lp":2.998e-7,
-             "fs.constant_sieving_coeff[Li]":1.001,
-             "fs.constant_sieving_coeff[Co]":0.3962,
-             "fs.ionic_strength_coeff[Li]":5.024e-4,
-             "fs.ionic_strength_coeff[Co]":9.25e-5
+# Data from parmest best estimate:
+theta_hat = {"fs.Lp": 2.97e-7,
+             "fs.constant_sieving_coeff[Li]": 1.33,
+             "fs.constant_sieving_coeff[Co]": 0.49,
+             "fs.ionic_strength_coeff[Li]": 5.14e-4,
+             "fs.ionic_strength_coeff[Co]": 1.34e-4
 }
 
 # Default design
@@ -286,6 +309,26 @@ for i in range(4):
     FIM_temp = ms_contactor_DoE.compute_FIM(method='sequential')
 
     FIM_prior += FIM_temp
+
+# Theoretical reasonable expert suggestion
+center_design = copy.deepcopy(membrane_design)
+
+# Change values to center
+center_design["Q_feed (m^3/hr)"] = 100.0
+center_design["Q_diaf (m^3/hr)"] = 30.0
+
+doe_experiment = MembraneExperiment(data=center_design, theta=theta_hat)
+
+ms_contactor_DoE = DesignOfExperiments(
+    experiment=doe_experiment,
+    step=1e-2,
+    scale_constant_value=1,
+    scale_nominal_param_value=True,
+    tee=False,
+)
+
+FIM_center = ms_contactor_DoE.compute_FIM(method='sequential')
+
 # Estimate experiments for all conditions
 objective_options = [
         "determinant",
@@ -358,9 +401,14 @@ for ind, objective_option in enumerate(objective_options):
     optimal_FIMs_round_2[ind] = ms_contactor_DoE_2.results["FIM"]
     optimal_points_round_2[ind] = ms_contactor_DoE_2.results["Experiment Design"]
 
-theta_labels = ["$L_p$", "$S_{Li}$", "$S_{Co}$", "$\delta_{Li}$", "$\delta_{Co}$"]
-theta_values = [2.998e-7, 1.001, 0.3962, 0.0005024, 9.250e-5]# 0.00000626]
+# theta_labels = [r"$L_p$", r"$\bar{S}_{\text{Li}^{+}}$", r"$\bar{S}_{\text{Co}^{2+}}$", r"$\delta_{\text{Li}^{+}}$", r"$\delta_{\text{Co}^{2+}}$"]
+theta_labels = [r"$L_p$", r"$\bar{S}_{1}$", r"$\bar{S}_{2}$", r"$\delta_{1}$", r"$\delta_{2}$"]
+theta_values = [2.97e-7, 1.33, 0.49, 0.000514, 1.34e-4]# 0.00000626]
 #theta_values = theta_hat.values()
+
+plot_pairwise_uncertainties([FIM_prior, optimal_FIMs[2], FIM_prior + FIM_center], theta_labels, theta_values, n_std=1)
+plt.savefig("uncertainty_reduction_with_proposed_experiment.png")
+plt.show()
 
 plot_pairwise_uncertainties([FIM_prior, optimal_FIMs[2]], theta_labels, theta_values, n_std=1)
 plt.savefig("uncertainty_reduction.png")
@@ -369,6 +417,7 @@ plt.show()
 plot_pairwise_uncertainties([FIM_prior, ], theta_labels, theta_values, n_std=1)
 plt.savefig("only_prior_uncertainty_comparison.png")
 plt.show()
+
 #
 # design_ranges = {
 #     "feed_flow": [9, 9.2, 9.4, 9.6],
@@ -402,7 +451,7 @@ for diafiltrate_flow in design_ranges["diafiltrate_flow"]:
 
         print("\n\n\nMAKE EXPERIMENT\n\n\n")
 
-        doe_experiment = MembraneExperiment(data=membrane_design, theta=theta_hat)
+        doe_experiment = MembraneExperiment(data=membrane_design)
 
         solver = pyo.SolverFactory("ipopt")
         solver.options["linear_solver"] = "ma27"

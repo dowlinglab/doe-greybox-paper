@@ -9,7 +9,7 @@ from dataclasses import dataclass
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.transforms as transforms
-from matplotlib.patches import Ellipse
+from matplotlib.patches import Ellipse, Patch
 
 from pyomo.common.dependencies import numpy as np, pathlib
 
@@ -72,7 +72,7 @@ def helper(my_array, time):
     return data2
 
 
-def plot_pairwise_uncertainties(FIMs, theta_labels, theta_hat, n_std):
+def plot_pairwise_uncertainties(FIMs, theta_labels, theta_hat, n_std, add_legend=False):
     cov_mat_before = np.linalg.inv(FIMs[0])
 
     n = len(theta_labels)
@@ -209,6 +209,14 @@ def plot_pairwise_uncertainties(FIMs, theta_labels, theta_hat, n_std):
                 # Adjust plot limits
                 plt.xlim([theta_hat[i] - max_scale_x, theta_hat[i] + max_scale_x])
                 plt.ylim([theta_hat[j] - max_scale_y, theta_hat[j] + max_scale_y])
+
+                if add_legend:
+                    ellipse_legend = [
+                        Patch(edgecolor='gray', facecolor=(0.5, 0.8, 0.9), alpha=0.5, label='Original Experiments'),
+                        Patch(edgecolor='k', lw=3, facecolor=(0.4, 0.4, 0.4), alpha=0.7, label='With Optimal Experiment'),
+                    ]
+
+                    fig.legend(handles=ellipse_legend, loc='upper right', bbox_to_anchor=(0.9, 0.9), fontsize=24)
 
     if len(FIMs) == 3:
         for ind1, i in enumerate(range(0, n - 1)):
