@@ -248,7 +248,7 @@ def run_single_TC_Lab_experiment(include_Th=False, reparam=False, objective_opti
         theta_labels = [r"$\boldsymbol{U_a}$", r"$\boldsymbol{U_b}$", r"$\boldsymbol{Cp_H^{-1}}$", r"$\boldsymbol{Cp_S^{-1}}$"]
 
         # Plot the Pairwise Uncertainties
-        plot_pairwise_uncertainties([prior_info_normal_param, prior_info_normal_param + new_FIM], theta_labels, list(theta_values_normal_param.values()), n_std=1)
+        plot_pairwise_uncertainties([prior_info_normal_param, prior_info_normal_param + new_FIM], theta_labels, list(theta_values_normal_param.values()), n_std=1, add_legend=True)
         plt.savefig("uncertainty_reduction_TC_Lab.png")
         plt.show()
 
