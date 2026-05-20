@@ -28,7 +28,7 @@ plt.rc('figure', titlesize=BIGGER_SIZE)  # fontsize of the figure title
 plt.rc('lines', linewidth=3)
 
 
-def TC_Lab_parmest(data_files, generate_Th=False, number_of_states=2, reparam=False):
+def TC_Lab_parmest(data_files, generate_Th=False, number_of_states=2, reparam=False, CpS_CpH_ratio=None, plot_results=True):
     """
     Function to estimate the parameters from
     TC Lab data.
@@ -71,7 +71,7 @@ def TC_Lab_parmest(data_files, generate_Th=False, number_of_states=2, reparam=Fa
 
         # Create experiment objects
         experiment = TC_Lab_experiment(
-            data=tc_data, number_of_states=number_of_states, include_Th=False, reparam=reparam
+            data=tc_data, number_of_states=number_of_states, include_Th=False, reparam=reparam, CpS_CpH_ratio=CpS_CpH_ratio,
         )
         experiment.get_labeled_model()
 
@@ -97,13 +97,14 @@ def TC_Lab_parmest(data_files, generate_Th=False, number_of_states=2, reparam=Fa
 
     obj, theta = pest.theta_est()
 
-    parmest_regression_results = extract_plot_results(
-        tc_datas[0], pest.ef_instance.Scenario0, reparam=reparam, save_plot=True, file_name="sine-wave-experiment-tclab.png"
-    )
+    if plot_results:
+        parmest_regression_results = extract_plot_results(
+            tc_datas[0], pest.ef_instance.Scenario0, reparam=reparam, save_plot=True, file_name="sine-wave-experiment-tclab.png"
+        )
 
-    parmest_regression_results = extract_plot_results(
-        tc_datas[1], pest.ef_instance.Scenario1, reparam=reparam, save_plot=True, file_name="step-test-experiment-tclab.png"
-    )
+        parmest_regression_results = extract_plot_results(
+            tc_datas[1], pest.ef_instance.Scenario1, reparam=reparam, save_plot=True, file_name="step-test-experiment-tclab.png"
+        )
 
     if reparam:
         theta = recover_standard_params(theta_vals=theta, alpha=pest.ef_instance.Scenario0.alpha, P1=pest.ef_instance.Scenario0.P1)

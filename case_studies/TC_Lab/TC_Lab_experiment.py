@@ -53,6 +53,7 @@ class TC_Lab_experiment(Experiment):
         sine_period=None,
         reparam=False,
         include_Th=False,
+        CpS_CpH_ratio=None,
     ):
         """
         Arguments
@@ -63,6 +64,12 @@ class TC_Lab_experiment(Experiment):
         number_of_states: int, number of states in the heat transfer model (must be 2 or 4), default: 2
         sine_amplitude: float, amplitude of the sine wave, default: None (do not use the sine wave)
         sine_period: float, period of the sine wave, default: None (do not use the sine wave)
+        reparam: boolean, True if the model should be raparametrized, False if not, default: False
+        include_Th: boolean, True if including Th as data, False if not, default: False
+        CpS_CpH_ratio: float, ratio of the value of CpS to CpH, removes CpS as an unknown parameter
+                       if the value is not None, default: None
+
+        Note -- CpS_CpH_ratio can only be used if 'reparam' is False.
 
         """
         self.data = data
@@ -115,6 +122,8 @@ class TC_Lab_experiment(Experiment):
         self.reparam = reparam
 
         self.include_Th = include_Th
+
+        self.CpS_CpH_ratio = CpS_CpH_ratio
 
         self.model = None
 
@@ -276,7 +285,10 @@ class TC_Lab_experiment(Experiment):
         @m.Constraint(m.t)
         def Ts1_ode(m, t):
             if not self.reparam:
-                return m.Ts1dot[t] == (m.Ub * (m.Th1[t] - m.Ts1[t])) * m.inv_CpS
+                if self.CpS_CpH_ratio is not None:
+                    return m.Ts1dot[t] == (m.Ub * (m.Th1[t] - m.Ts1[t])) * m.inv_CpH * 1 / self.CpS_CpH_ratio
+                else:
+                    return m.Ts1dot[t] == (m.Ub * (m.Th1[t] - m.Ts1[t])) * m.inv_CpS
             else:
                 # REPARAM
                 return m.Ts1dot[t] == m.beta_3 * (m.Th1[t] - m.Ts1[t])
@@ -311,7 +323,10 @@ class TC_Lab_experiment(Experiment):
             @m.Constraint(m.t)
             def Ts2_ode(m, t):
                 if not self.reparam:
-                    return m.Ts2dot[t] == (m.Ub * (m.Th2[t] - m.Ts2[t])) * m.inv_CpS
+                    if self.CpS_CpH_ratio is not None:
+                        return m.Ts2dot[t] == (m.Ub * (m.Th2[t] - m.Ts2[t])) * m.inv_CpH * 1 / self.CpS_CpH_ratio
+                    else:
+                        return m.Ts2dot[t] == (m.Ub * (m.Th2[t] - m.Ts2[t])) * m.inv_CpS
                 else:
                     # REPARAM
                     return m.Ts2dot[t] == m.beta_3 * (m.Th2[t] - m.Ts2[t])
@@ -470,8 +485,10 @@ class TC_Lab_experiment(Experiment):
         # Add labels to all unknown parameters with nominal value as the value
         if not self.reparam:
             m.unknown_parameters.update(
-                (k, k.value) for k in [m.Ua, m.Ub, m.inv_CpH, m.inv_CpS]
+                (k, k.value) for k in [m.Ua, m.Ub, m.inv_CpH]
             )
+            if self.CpS_CpH_ratio is None:
+                m.unknown_parameters[m.inv_CpS] = m.inv_CpS.value
             if self.number_of_states == 4:
                 m.unknown_parameters[m.Uc] = m.Uc.value
         else:
@@ -734,7 +751,7 @@ def extract_plot_results(tc_exp_data, model, number_of_states=2, reparam=False, 
     plt.tight_layout()
 
     if save_plot:
-        plt.savefig(file_name, bbox_inches='tight', format="png", dpi=600)
+        plt.savefig(file_name, bbox_inches='tight', format="png", dpi=900)
     plt.show()
 
     # Recover params if needed

@@ -7,7 +7,7 @@ from TC_Lab_experiment import (
     results_summary,
 )
 
-from TC_Lab_data_helper import TC_Lab_data, helper, plot_pairwise_uncertainties
+from TC_Lab_data_helper import TC_Lab_data, helper, plot_pairwise_uncertainties, plot_correlation_matrix
 
 from TC_Lab_parameter_estimation import TC_Lab_parmest
 
@@ -44,6 +44,18 @@ def run_single_TC_Lab_experiment(include_Th=False, reparam=False, objective_opti
     # degrees of freedom for experimental design.
     skip = 30
 
+    # Constant scaling
+    constant_scaling = 1e0
+
+    # Nominal Param Scaling
+    scale_nominal_param_value = True
+
+    # step size for FD derivatives
+    step_size = 1e-3
+
+    # CpS:CpH ratio
+    CpS_to_CpH_ratio = 1 / 8
+
     # Create the data object considering the new control points every 10 seconds
     tc_data = TC_Lab_data(
         name="Sine Wave Test for Heater 1",
@@ -74,68 +86,74 @@ def run_single_TC_Lab_experiment(include_Th=False, reparam=False, objective_opti
         Tamb=df2['T1'].values[0],
     )
 
-    theta_values = TC_Lab_parmest([file_path, file_path_2], generate_Th=False, reparam=reparam)
+    theta_values = TC_Lab_parmest([file_path, ], generate_Th=False, reparam=reparam,
+                                  CpS_CpH_ratio=CpS_to_CpH_ratio, plot_results=False)
+
+    if CpS_to_CpH_ratio is not None:
+        # Add dummy value for the data object to hold
+        theta_values["inv_CpS"] = 1 / 0.17
 
     # Create initial experiment
     experiment = TC_Lab_experiment(
+        data=tc_data2,
+        theta_initial=theta_values,
+        number_of_states=number_tclab_states,
+        include_Th=include_Th,
+        reparam=reparam,
+        CpS_CpH_ratio=CpS_to_CpH_ratio,
+    )
+
+    TC_Lab_DoE_exp1 = DesignOfExperiments(
+        experiment=experiment,
+        step=step_size,
+        scale_constant_value=constant_scaling,
+        scale_nominal_param_value=scale_nominal_param_value,
+        tee=True,
+    )
+
+    # Analyze initial FIM for prior information (Step test)
+    FIM = TC_Lab_DoE_exp1.compute_FIM(method='sequential')
+
+    # Create initial experiment
+    experiment2 = TC_Lab_experiment(
         data=tc_data,
         theta_initial=theta_values,
         number_of_states=number_tclab_states,
         include_Th=include_Th,
         reparam=reparam,
+        CpS_CpH_ratio=CpS_to_CpH_ratio,
     )
-
-    TC_Lab_DoE_exp1 = DesignOfExperiments(
-        experiment=experiment,
-        step=1e-2,
-        scale_constant_value=1,
-        scale_nominal_param_value=True,
-        tee=True,
-    )
-
-    # Analyze initial FIM for prior information
-    FIM = TC_Lab_DoE_exp1.compute_FIM(method='sequential')
-
-    # Create initial experiment
-    experiment2 = TC_Lab_experiment(
-        data=tc_data2,
-        theta_initial=theta_values,
-        number_of_states=number_tclab_states,
-        include_Th=include_Th,
-        reparam=reparam,
-    )
-
-    # solver = pyo.SolverFactory("ipoptv2")
 
     TC_Lab_DoE_exp2 = DesignOfExperiments(
         experiment=experiment2,
-        step=1e-2,
-        scale_constant_value=1,
-        scale_nominal_param_value=True,
+        step=step_size,
+        scale_constant_value=constant_scaling,
+        scale_nominal_param_value=scale_nominal_param_value,
         tee=True,
     )
 
-    # Analyze initial FIM for prior information
+    # Analyze initial FIM for prior information (Sine Wave Test)
     FIM2 = TC_Lab_DoE_exp2.compute_FIM(method='sequential')
 
     # New experiment to perform experimental design
     doe_experiment = TC_Lab_experiment(
-        data=tc_data2,
+        data=tc_data,
         theta_initial=theta_values,
         number_of_states=number_tclab_states,
         include_Th=include_Th,
+        reparam=reparam,
+        CpS_CpH_ratio=CpS_to_CpH_ratio,
     )
 
     # Create the design of experiments object using our experiment instance from above
     TC_Lab_DoE = DesignOfExperiments(
         experiment=doe_experiment,
-        step=1e-2,
+        step=step_size,
         use_grey_box_objective=True,  # Comment out if normal
-        scale_constant_value=1,
-        scale_nominal_param_value=True,
+        scale_constant_value=constant_scaling,
+        scale_nominal_param_value=scale_nominal_param_value,
         objective_option=objective_option,  # Now we specify a type of objective, D-opt = "determinant"
-        prior_FIM=FIM
-        + FIM2,  # We use the prior information from the existing experiment!
+        prior_FIM=FIM2,  # We use the prior information from the existing experiment!
         tee=True,
         grey_box_tee=True,
     )
@@ -145,7 +163,7 @@ def run_single_TC_Lab_experiment(include_Th=False, reparam=False, objective_opti
 
     # Extract the results
     dopt_pyomo_doe_results = extract_plot_results(
-        None, TC_Lab_DoE.model.scenario_blocks[0], save_plot=save_plot, file_name=file_name
+        None, TC_Lab_DoE.model.scenario_blocks[0], save_plot=save_plot, file_name=file_name, reparam=reparam
     )
 
     # Plot the pairwise uncertainties before and after
@@ -157,106 +175,46 @@ def run_single_TC_Lab_experiment(include_Th=False, reparam=False, objective_opti
             "inv_CpS": 1 / 0.588
         }
 
-        # Grab priors with normal params
-        reparam = False
+        theta_values_normal_param = theta_values
 
-        experiment_normal_param = TC_Lab_experiment(
-            data=tc_data,
-            theta_initial=theta_values_normal_param,
-            number_of_states=number_tclab_states,
-            include_Th=include_Th,
-            reparam=reparam,
-        )
+        # Gather new design FIM
+        new_FIM = TC_Lab_DoE.results["FIM"]
 
-        TC_Lab_DoE_exp1_normal_param = DesignOfExperiments(
-            experiment=experiment_normal_param,
-            step=1e-2,
-            scale_constant_value=1,
-            scale_nominal_param_value=True,
-            tee=True,
-        )
+        # Optionally print some information
+        verbose = False
+        if verbose:
+            print("\n\n\n\n\n\n\n\n\n\n")
+            print(FIM2)
+            print("\n\n\n\n\n\n\n\n\n\n")
 
-        # Analyze initial FIM for prior information
-        FIM_normal_param = TC_Lab_DoE_exp1_normal_param.compute_FIM(method='sequential')
+            print("\n\n\n\n\n\n\n\n\n\n")
+            print(FIM + FIM2)
+            print("\n\n\n\n\n\n\n\n\n\n")
 
-        # Create initial experiment
-        experiment2_normal_param = TC_Lab_experiment(
-            data=tc_data2,
-            theta_initial=theta_values_normal_param,
-            number_of_states=number_tclab_states,
-            include_Th=include_Th,
-            reparam=reparam,
-        )
+            print("\n\n\n\n\n\n\n\n\n\n")
+            print(new_FIM)
+            print("\n\n\n\n\n\n\n\n\n\n")
 
-        TC_Lab_DoE_exp2 = DesignOfExperiments(
-            experiment=experiment2_normal_param,
-            step=1e-2,
-            scale_constant_value=1,
-            scale_nominal_param_value=True,
-            tee=True,
-        )
+        theta_labels = [r"$\boldsymbol{U_a}$", r"$\boldsymbol{U_b}$", r"$\boldsymbol{Cp_H^{-1}}$",]  # r"$\boldsymbol{Cp_S^{-1}}$"]
 
-        # Analyze initial FIM for prior information
-        FIM2_normal_param = TC_Lab_DoE_exp2.compute_FIM(method='sequential')
-
-        prior_info_normal_param = FIM_normal_param + FIM2_normal_param
-
-        # Grab the data from the proposed experiment
-        tc_data_new_exp = TC_Lab_data(
-            name="Proposed Experiment with Dummy Data",
-            time=df2['Time'].values[::skip],
-            T1=df2['T1'].values[::skip],
-            u1=np.asarray(TC_Lab_DoE.results["Experiment Design"]),
-            P1=200,
-            TS1_data=None,
-            T2=df2['T2'].values[::skip],
-            u2=df2['Q2'].values[::skip],
-            P2=200,
-            TS2_data=None,
-            Tamb=df2['T1'].values[0],
-        )
-
-        experiment_proposed_normal_param = TC_Lab_experiment(
-            data=tc_data_new_exp,
-            theta_initial=theta_values_normal_param,
-            number_of_states=number_tclab_states,
-            include_Th=include_Th,
-            reparam=reparam,
-        )
-
-        TC_Lab_DoE_normal_param_eval = DesignOfExperiments(
-            experiment=doe_experiment,
-            step=1e-2,
-            use_grey_box_objective=True,  # Comment out if normal
-            scale_constant_value=1,
-            scale_nominal_param_value=True,
-            objective_option=objective_option,  # Now we specify a type of objective, D-opt = "determinant"
-            tee=True,
-            grey_box_tee=True,
-        )
-
-        # Run the experimental design
-        new_FIM = TC_Lab_DoE_normal_param_eval.compute_FIM(method='sequential')
-        print("\n\n\n\n\n\n\n\n\n\n")
-        print(prior_info_normal_param)
-        print("\n\n\n\n\n\n\n\n\n\n")
-
-        print("\n\n\n\n\n\n\n\n\n\n")
-        print(prior_info_normal_param + new_FIM)
-        print("\n\n\n\n\n\n\n\n\n\n")
-
-        theta_labels = [r"$\boldsymbol{U_a}$", r"$\boldsymbol{U_b}$", r"$\boldsymbol{Cp_H^{-1}}$", r"$\boldsymbol{Cp_S^{-1}}$"]
+        if "inv_CpS" in theta_values_normal_param.keys():
+            theta_values_normal_param.pop("inv_CpS")
 
         # Plot the Pairwise Uncertainties
-        plot_pairwise_uncertainties([prior_info_normal_param, prior_info_normal_param + new_FIM], theta_labels, list(theta_values_normal_param.values()), n_std=1, add_legend=True)
+        plot_pairwise_uncertainties([FIM2, new_FIM], theta_labels, list(theta_values_normal_param.values), n_std=1, add_legend=True)
         plt.savefig("uncertainty_reduction_TC_Lab.png")
         plt.show()
 
-        plot_pairwise_uncertainties([prior_info_normal_param, ], theta_labels, list(theta_values_normal_param.values()), n_std=1)
+        plot_pairwise_uncertainties([FIM2, ], theta_labels, list(theta_values_normal_param.values), n_std=1)
         plt.savefig("only_prior_uncertainty_comparison_TC_Lab.png")
         plt.show()
 
-    return TC_Lab_DoE.results['FIM']
+        plot_pairwise_uncertainties([FIM2, new_FIM, FIM + FIM2], theta_labels,
+                                    list(theta_values_normal_param.values), n_std=1, add_legend=True)
+        plt.savefig("uncertainty_reduction_TC_Lab_comparison_with_normal_exp.png")
+        plt.show()
+
+    return TC_Lab_DoE.results['FIM'], FIM2, FIM + FIM2
 
     ###################
     # End optimal DoE
@@ -270,7 +228,7 @@ if __name__ == "__main__":
 
     for objective_option in objective_options:
         # Run the condition
-        temp_FIM = run_single_TC_Lab_experiment(reparam=True, objective_option=objective_option, save_plot=True, file_name=default_file_name.format(objective_option))
+        temp_FIM, prior2, prior12 = run_single_TC_Lab_experiment(reparam=False, objective_option=objective_option, save_plot=True, file_name=default_file_name.format(objective_option))
 
         # Save the results
         FIM_results_dict[objective_option] = temp_FIM
@@ -280,6 +238,9 @@ if __name__ == "__main__":
         json.dump(FIM_results_dict, f)
 
     overall_df = pd.DataFrame(columns=objective_options, index=objective_options)
+
+    # Labels for correlation matrices
+    theta_labels = [r"$\boldsymbol{U_a}$", r"$\boldsymbol{U_b}$", r"$\boldsymbol{Cp_H^{-1}}$", ]
 
     # Report data and save optimality conditions to a file
     for objective_option in objective_options:
@@ -300,5 +261,27 @@ if __name__ == "__main__":
         overall_df.loc[[objective_option], ["minimum_eigenvalue"]] = E_opt
         overall_df.loc[[objective_option], ["condition_number"]] = ME_opt
 
+        # Plot correlation matrix for each experiment
+        plot_correlation_matrix(result, theta_labels)
+        plt.savefig("correlation_matrix_after_optimal_experiment_{}.png".format(objective_option))
+        plt.clf()
+        plt.close()
+
     overall_df.to_csv("TC_Lab_case_study_optimality_conditions_summary_results.csv")
     print(overall_df)
+
+    # Generate Correlation Matrices for priors
+    plt.clf()
+    plt.close()
+
+    # Plotting first the prior
+    plot_correlation_matrix(prior2, theta_labels)
+    plt.savefig("correlation_matrix_only_step_test.png")
+    plt.clf()
+    plt.close()
+
+    # Then plot the model-free experiment
+    plot_correlation_matrix(prior12, theta_labels)
+    plt.savefig("correlation_matrix_step_and_sine_test.png")
+    plt.clf()
+    plt.close()
