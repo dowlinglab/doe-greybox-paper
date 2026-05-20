@@ -21,7 +21,7 @@ def rooney_biegler_parameter_estimation():
     experiments = []
     for i in range(int(sys.argv[1])):
         experiments.append(
-            RooneyBieglerExperimentDoE(data={'hour': data[i][0], 'y': data[i][1]})
+            RooneyBieglerExperimentDoE(data={'day': data[i][0], 'y': data[i][1]})
         )
 
     pest = parmest.Estimator(experiments, obj_function="SSE")
@@ -36,7 +36,7 @@ def rooney_biegler_sensitivity():
     theta = rooney_biegler_parameter_estimation()
 
     # Create a RooneyBiegler Experiment, pass the theta estimate there
-    experiment = RooneyBieglerExperimentDoE(data={'hour': 10, 'y': 22}, theta=theta)
+    experiment = RooneyBieglerExperimentDoE(data={'day': 2, 'y': 22}, theta=theta)
 
     # Use a central difference, with step size 1e-3
     fd_formula = "central"
@@ -53,7 +53,7 @@ def rooney_biegler_sensitivity():
         if i >= int(sys.argv[1]):
             break
         prev_experiment = RooneyBieglerExperimentDoE(
-            data={'hour': data[i][0], 'y': data[i][1]}
+            data={'day': data[i][0], 'y': data[i][1]}
         )
         doe_obj = DesignOfExperiments(
             prev_experiment,
@@ -82,7 +82,7 @@ def rooney_biegler_sensitivity():
     trace_FIM_vals = []
     y_vals = []
     for t in time_vals:
-        experiment = RooneyBieglerExperimentDoE(data={'hour': t, 'y': 20})
+        experiment = RooneyBieglerExperimentDoE(data={'day': t, 'y': 20})
 
         doe_obj = DesignOfExperiments(
             experiment,
