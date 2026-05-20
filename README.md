@@ -54,3 +54,13 @@ without errors.
 python test_cyipopt_install
 ```
 
+Software versions used to generate the results in this repository:
+
+```
+pyomo - 6.10.0
+cyipopt - 1.6.1
+idaes - 2.8.0
+numpy - 2.3.3
+CPython - 3.13.7 on Darwin 19.6.0
+```
+
