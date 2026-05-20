@@ -38,6 +38,7 @@ plt.rc('figure', titlesize=BIGGER_SIZE)  # fontsize of the figure title
 plt.rc('lines', linewidth=3)
 
 import matplotlib
+
 matplotlib.rc('text.latex', preamble=r'\usepackage{amsmath}')
 
 
@@ -286,7 +287,13 @@ class TC_Lab_experiment(Experiment):
         def Ts1_ode(m, t):
             if not self.reparam:
                 if self.CpS_CpH_ratio is not None:
-                    return m.Ts1dot[t] == (m.Ub * (m.Th1[t] - m.Ts1[t])) * m.inv_CpH * 1 / self.CpS_CpH_ratio
+                    return (
+                        m.Ts1dot[t]
+                        == (m.Ub * (m.Th1[t] - m.Ts1[t]))
+                        * m.inv_CpH
+                        * 1
+                        / self.CpS_CpH_ratio
+                    )
                 else:
                     return m.Ts1dot[t] == (m.Ub * (m.Th1[t] - m.Ts1[t])) * m.inv_CpS
             else:
@@ -324,7 +331,13 @@ class TC_Lab_experiment(Experiment):
             def Ts2_ode(m, t):
                 if not self.reparam:
                     if self.CpS_CpH_ratio is not None:
-                        return m.Ts2dot[t] == (m.Ub * (m.Th2[t] - m.Ts2[t])) * m.inv_CpH * 1 / self.CpS_CpH_ratio
+                        return (
+                            m.Ts2dot[t]
+                            == (m.Ub * (m.Th2[t] - m.Ts2[t]))
+                            * m.inv_CpH
+                            * 1
+                            / self.CpS_CpH_ratio
+                        )
                     else:
                         return m.Ts2dot[t] == (m.Ub * (m.Th2[t] - m.Ts2[t])) * m.inv_CpS
                 else:
@@ -484,9 +497,7 @@ class TC_Lab_experiment(Experiment):
         m.unknown_parameters = pyo.Suffix(direction=pyo.Suffix.LOCAL)
         # Add labels to all unknown parameters with nominal value as the value
         if not self.reparam:
-            m.unknown_parameters.update(
-                (k, k.value) for k in [m.Ua, m.Ub, m.inv_CpH]
-            )
+            m.unknown_parameters.update((k, k.value) for k in [m.Ua, m.Ub, m.inv_CpH])
             if self.CpS_CpH_ratio is None:
                 m.unknown_parameters[m.inv_CpS] = m.inv_CpS.value
             if self.number_of_states == 4:
@@ -584,7 +595,9 @@ def recover_standard_params(theta_vals=None, alpha=None, P1=None):
                      parameters
     """
     if theta_vals is None:
-        raise ValueError("theta_vals cannot be None, please provide a dictionary of values for the reparametrized parameter values")
+        raise ValueError(
+            "theta_vals cannot be None, please provide a dictionary of values for the reparametrized parameter values"
+        )
 
     # Recover the values
     CpH = alpha * P1 / theta_vals["beta_4"]
@@ -593,12 +606,19 @@ def recover_standard_params(theta_vals=None, alpha=None, P1=None):
     CpS = Ub / theta_vals["beta_3"]
 
     # Store them in a dictionary
-    orig_theta_vals = {"Ua": Ua, "Ub": Ub, "inv_CpH": 1/CpH, "inv_CpS": 1/CpS}
+    orig_theta_vals = {"Ua": Ua, "Ub": Ub, "inv_CpH": 1 / CpH, "inv_CpS": 1 / CpS}
 
     return orig_theta_vals
 
 
-def extract_plot_results(tc_exp_data, model, number_of_states=2, reparam=False, save_plot=False, file_name=None):
+def extract_plot_results(
+    tc_exp_data,
+    model,
+    number_of_states=2,
+    reparam=False,
+    save_plot=False,
+    file_name=None,
+):
     """Extract and plot the results of the Pyomo model
 
     Arguments:
@@ -615,7 +635,6 @@ def extract_plot_results(tc_exp_data, model, number_of_states=2, reparam=False, 
     solution: solution from Pyomo model, extracted and stored in a TC_Lab_data instance
 
     """
-
 
     # For convenience, save in a shorter variable name
     if tc_exp_data is not None:
@@ -756,10 +775,20 @@ def extract_plot_results(tc_exp_data, model, number_of_states=2, reparam=False, 
 
     # Recover params if needed
     if reparam:
-        theta_vals = {"beta_1": pyo.value(model.beta_1), "beta_2": pyo.value(model.beta_2), "beta_3": pyo.value(model.beta_3), "beta_4": pyo.value(model.beta_4)}
+        theta_vals = {
+            "beta_1": pyo.value(model.beta_1),
+            "beta_2": pyo.value(model.beta_2),
+            "beta_3": pyo.value(model.beta_3),
+            "beta_4": pyo.value(model.beta_4),
+        }
         theta_vals = recover_standard_params(theta_vals, model.alpha, model.P1)
     else:
-        theta_vals = {"Ua": pyo.value(model.Ua), "Ub": pyo.value(model.Ub), "inv_CpH": pyo.value(model.inv_CpH), "inv_CpS": pyo.value(model.inv_CpS)}
+        theta_vals = {
+            "Ua": pyo.value(model.Ua),
+            "Ub": pyo.value(model.Ub),
+            "inv_CpH": pyo.value(model.inv_CpH),
+            "inv_CpS": pyo.value(model.inv_CpS),
+        }
 
     print("Model parameters:")
     print("Ua =", round(theta_vals["Ua"], 4), "Watts/degC")

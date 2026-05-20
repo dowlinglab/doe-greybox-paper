@@ -7,7 +7,12 @@ from TC_Lab_experiment import (
     results_summary,
 )
 
-from TC_Lab_data_helper import TC_Lab_data, helper, plot_pairwise_uncertainties, plot_correlation_matrix
+from TC_Lab_data_helper import (
+    TC_Lab_data,
+    helper,
+    plot_pairwise_uncertainties,
+    plot_correlation_matrix,
+)
 
 from TC_Lab_parameter_estimation import TC_Lab_parmest
 
@@ -29,7 +34,13 @@ except:
     pass
 
 
-def run_sense_TC_Lab_experiment(include_Th=False, reparam=False, objective_option="determinant", save_plot=False, file_name=None):
+def run_sense_TC_Lab_experiment(
+    include_Th=False,
+    reparam=False,
+    objective_option="determinant",
+    save_plot=False,
+    file_name=None,
+):
     # Read in the data
     DATA_DIR = pathlib.Path(__file__).parent
     # file_path = DATA_DIR / "data" / "validation_experiment_env_2_step_50_run_1.csv"
@@ -88,8 +99,13 @@ def run_sense_TC_Lab_experiment(include_Th=False, reparam=False, objective_optio
         Tamb=df2['T1'].values[0],
     )
 
-    theta_values = TC_Lab_parmest([file_path, ], generate_Th=False, reparam=reparam,
-                                  CpS_CpH_ratio=CpS_to_CpH_ratio, plot_results=False)
+    theta_values = TC_Lab_parmest(
+        [file_path],
+        generate_Th=False,
+        reparam=reparam,
+        CpS_CpH_ratio=CpS_to_CpH_ratio,
+        plot_results=False,
+    )
 
     theta_values["inv_CpS"] = 1 / 0.17
 
@@ -136,13 +152,13 @@ def run_sense_TC_Lab_experiment(include_Th=False, reparam=False, objective_optio
 
     rng = np.random.default_rng()
 
-    theta_vals = [0, ] * 50
-    FIM_vals = [0, ] * 50
-    optimal_profiles = [0, ] * 50
+    theta_vals = [0] * 50
+    FIM_vals = [0] * 50
+    optimal_profiles = [0] * 50
 
     mean = theta_values.values[0:3]
     cov = np.linalg.pinv(FIM)
-    samples = rng.multivariate_normal(mean, cov,50)
+    samples = rng.multivariate_normal(mean, cov, 50)
 
     for i in range(50):
         # Sample the uncertainty distribution
@@ -197,9 +213,19 @@ def run_sense_TC_Lab_experiment(include_Th=False, reparam=False, objective_optio
 
 if __name__ == "__main__":
     default_file_name = "optimal_profile_using_{}.png"
-    objective_options = ["determinant", "trace", "minimum_eigenvalue", "condition_number"]
+    objective_options = [
+        "determinant",
+        "trace",
+        "minimum_eigenvalue",
+        "condition_number",
+    ]
 
-    theta_vals, FIM_sens, opt_profiles = run_sense_TC_Lab_experiment(reparam=False, objective_option="minimum_eigenvalue", save_plot=True, file_name=default_file_name.format("minimum_eigenvalue"))
+    theta_vals, FIM_sens, opt_profiles = run_sense_TC_Lab_experiment(
+        reparam=False,
+        objective_option="minimum_eigenvalue",
+        save_plot=True,
+        file_name=default_file_name.format("minimum_eigenvalue"),
+    )
 
     print("\n\n\nTheta values for each run\n\n\n")
     for i in range(50):
@@ -227,32 +253,61 @@ if __name__ == "__main__":
         opt_prof_std_err.append(np.std(np.asarray(curr_vals)))
         print(opt_prof_means[i], opt_prof_std_err[i])
 
-    opt_prof_E_nominal = [np.float64(50.00000049499998), np.float64(99.99995076623004), np.float64(99.99996954750448),
-                          np.float64(99.9999731385892), np.float64(99.99997183664357), np.float64(99.99996408451622),
-                          np.float64(99.99992067281262), np.float64(9.925020423261664e-05),
-                          np.float64(4.562362636961466e-05), np.float64(4.4645508409188064e-05),
-                          np.float64(8.644313877356185e-05), np.float64(99.99989740359239),
-                          np.float64(99.99995631818321), np.float64(99.99996319715403), np.float64(99.99995706939951),
-                          np.float64(99.99990410493784), np.float64(9.357468944186229e-05),
-                          np.float64(4.575015084613644e-05), np.float64(4.394098514398443e-05),
-                          np.float64(6.902534876320119e-05), np.float64(95.46980485936068),
-                          np.float64(99.9968625249621), np.float64(6.748994347939746e-05),
-                          np.float64(3.949317788224626e-05), np.float64(3.3527631748510024e-05),
-                          np.float64(3.411864210364031e-05), np.float64(4.2830527592526946e-05),
-                          np.float64(9.96447377038543e-05), np.float64(99.99990561042165),
-                          np.float64(99.99994868349131), np.float64(99.99993181171732)]
+    opt_prof_E_nominal = [
+        np.float64(50.00000049499998),
+        np.float64(99.99995076623004),
+        np.float64(99.99996954750448),
+        np.float64(99.9999731385892),
+        np.float64(99.99997183664357),
+        np.float64(99.99996408451622),
+        np.float64(99.99992067281262),
+        np.float64(9.925020423261664e-05),
+        np.float64(4.562362636961466e-05),
+        np.float64(4.4645508409188064e-05),
+        np.float64(8.644313877356185e-05),
+        np.float64(99.99989740359239),
+        np.float64(99.99995631818321),
+        np.float64(99.99996319715403),
+        np.float64(99.99995706939951),
+        np.float64(99.99990410493784),
+        np.float64(9.357468944186229e-05),
+        np.float64(4.575015084613644e-05),
+        np.float64(4.394098514398443e-05),
+        np.float64(6.902534876320119e-05),
+        np.float64(95.46980485936068),
+        np.float64(99.9968625249621),
+        np.float64(6.748994347939746e-05),
+        np.float64(3.949317788224626e-05),
+        np.float64(3.3527631748510024e-05),
+        np.float64(3.411864210364031e-05),
+        np.float64(4.2830527592526946e-05),
+        np.float64(9.96447377038543e-05),
+        np.float64(99.99990561042165),
+        np.float64(99.99994868349131),
+        np.float64(99.99993181171732),
+    ]
 
     plt.figure(figsize=(12, 5))
-    plt.errorbar(np.linspace(0, 900, 31), opt_prof_means, color="gold", yerr=opt_prof_std_err, fmt='-o', capsize=3, label='Average Control Profile')
-    plt.plot(np.linspace(0, 900, 31), opt_prof_E_nominal, ls="--", color="purple", label='E-optimal Profile', zorder=3)
+    plt.errorbar(
+        np.linspace(0, 900, 31),
+        opt_prof_means,
+        color="gold",
+        yerr=opt_prof_std_err,
+        fmt='-o',
+        capsize=3,
+        label='Average Control Profile',
+    )
+    plt.plot(
+        np.linspace(0, 900, 31),
+        opt_prof_E_nominal,
+        ls="--",
+        color="purple",
+        label='E-optimal Profile',
+        zorder=3,
+    )
     plt.legend(bbox_to_anchor=(1.05, 1.05))
     plt.xlabel("Time (s)")
     plt.ylabel("Heater Power (%)")
     plt.tight_layout()
     plt.savefig("E-opt_sensitivity_to_model_unc.png", format="png", dpi=750)
     plt.show()
-
-
-
-
-

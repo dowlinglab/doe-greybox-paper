@@ -4,7 +4,11 @@ import pyomo.environ as pyo
 
 from pyomo.contrib.parmest import parmest
 
-from TC_Lab_experiment import TC_Lab_experiment, extract_plot_results, recover_standard_params
+from TC_Lab_experiment import (
+    TC_Lab_experiment,
+    extract_plot_results,
+    recover_standard_params,
+)
 
 from TC_Lab_data_helper import TC_Lab_data
 
@@ -28,7 +32,14 @@ plt.rc('figure', titlesize=BIGGER_SIZE)  # fontsize of the figure title
 plt.rc('lines', linewidth=3)
 
 
-def TC_Lab_parmest(data_files, generate_Th=False, number_of_states=2, reparam=False, CpS_CpH_ratio=None, plot_results=True):
+def TC_Lab_parmest(
+    data_files,
+    generate_Th=False,
+    number_of_states=2,
+    reparam=False,
+    CpS_CpH_ratio=None,
+    plot_results=True,
+):
     """
     Function to estimate the parameters from
     TC Lab data.
@@ -71,7 +82,11 @@ def TC_Lab_parmest(data_files, generate_Th=False, number_of_states=2, reparam=Fa
 
         # Create experiment objects
         experiment = TC_Lab_experiment(
-            data=tc_data, number_of_states=number_of_states, include_Th=False, reparam=reparam, CpS_CpH_ratio=CpS_CpH_ratio,
+            data=tc_data,
+            number_of_states=number_of_states,
+            include_Th=False,
+            reparam=reparam,
+            CpS_CpH_ratio=CpS_CpH_ratio,
         )
         experiment.get_labeled_model()
 
@@ -93,21 +108,35 @@ def TC_Lab_parmest(data_files, generate_Th=False, number_of_states=2, reparam=Fa
     solver_options = {"linear_solver": "ma57"}
 
     # Perform estimation
-    pest = parmest.Estimator(experiments, obj_function='SSE', tee=True, solver_options=solver_options)
+    pest = parmest.Estimator(
+        experiments, obj_function='SSE', tee=True, solver_options=solver_options
+    )
 
     obj, theta = pest.theta_est()
 
     if plot_results:
         parmest_regression_results = extract_plot_results(
-            tc_datas[0], pest.ef_instance.Scenario0, reparam=reparam, save_plot=True, file_name="sine-wave-experiment-tclab.png"
+            tc_datas[0],
+            pest.ef_instance.Scenario0,
+            reparam=reparam,
+            save_plot=True,
+            file_name="sine-wave-experiment-tclab.png",
         )
 
         parmest_regression_results = extract_plot_results(
-            tc_datas[1], pest.ef_instance.Scenario1, reparam=reparam, save_plot=True, file_name="step-test-experiment-tclab.png"
+            tc_datas[1],
+            pest.ef_instance.Scenario1,
+            reparam=reparam,
+            save_plot=True,
+            file_name="step-test-experiment-tclab.png",
         )
 
     if reparam:
-        theta = recover_standard_params(theta_vals=theta, alpha=pest.ef_instance.Scenario0.alpha, P1=pest.ef_instance.Scenario0.P1)
+        theta = recover_standard_params(
+            theta_vals=theta,
+            alpha=pest.ef_instance.Scenario0.alpha,
+            P1=pest.ef_instance.Scenario0.P1,
+        )
 
     return theta
 
@@ -161,4 +190,6 @@ if __name__ == "__main__":
         Tamb=df2['T1'].values[0],
     )
 
-    theta_values = TC_Lab_parmest([file_path, file_path_2], generate_Th=False, reparam=True)
+    theta_values = TC_Lab_parmest(
+        [file_path, file_path_2], generate_Th=False, reparam=True
+    )

@@ -31,7 +31,11 @@ plt.rc('lines', linewidth=3)
 def plot_correlation_matrix(FIM, theta_labels):
     # Compute the correlation matrix from FIM
     cov_M = np.linalg.inv(FIM)
-    corr_M = (np.sqrt(np.diag(1 / np.diag(cov_M)))) @ cov_M @ (np.sqrt(np.diag(1 / np.diag(cov_M))))
+    corr_M = (
+        (np.sqrt(np.diag(1 / np.diag(cov_M))))
+        @ cov_M
+        @ (np.sqrt(np.diag(1 / np.diag(cov_M))))
+    )
 
     im = plt.imshow(corr_M, cmap="RdBu_r")
     plt.xticks([0, 1, 2, 3, 4], theta_labels)
@@ -42,7 +46,15 @@ def plot_correlation_matrix(FIM, theta_labels):
     for i in range(len(theta_labels)):
         for j in range(len(theta_labels)):
             color = "white" if abs(corr_M[i, j]) > 0.65 else "black"
-            plt.gca().text(j, i, f"{corr_M[i, j]:.3f}", ha="center", va="center", color=color, fontsize=16)
+            plt.gca().text(
+                j,
+                i,
+                f"{corr_M[i, j]:.3f}",
+                ha="center",
+                va="center",
+                color=color,
+                fontsize=16,
+            )
 
 
 def plot_pairwise_uncertainties(FIMs, theta_labels, theta_hat, n_std):
@@ -50,7 +62,7 @@ def plot_pairwise_uncertainties(FIMs, theta_labels, theta_hat, n_std):
 
     n = len(theta_labels)
 
-    fig, ax = plt.subplots(ncols=n-1, nrows=n-1, figsize=(n*4, n*2.5))
+    fig, ax = plt.subplots(ncols=n - 1, nrows=n - 1, figsize=(n * 4, n * 2.5))
 
     for ind1, i in enumerate(range(0, n - 1)):
         # Loop over columns -- subdiagonal
@@ -83,8 +95,15 @@ def plot_pairwise_uncertainties(FIMs, theta_labels, theta_hat, n_std):
             pearson = cov[0, 1] / np.sqrt(cov[0, 0] * cov[1, 1])
             ell_radius_x = np.sqrt(1 + pearson)
             ell_radius_y = np.sqrt(1 - pearson)
-            ellipse = Ellipse((0, 0), width=ell_radius_x * 2, height=ell_radius_y * 2,
-                              edgecolor='k', lw=3, facecolor=(0.5, 0.8, 0.9), alpha=0.5)
+            ellipse = Ellipse(
+                (0, 0),
+                width=ell_radius_x * 2,
+                height=ell_radius_y * 2,
+                edgecolor='k',
+                lw=3,
+                facecolor=(0.5, 0.8, 0.9),
+                alpha=0.5,
+            )
 
             print(i, j, pearson)
 
@@ -97,10 +116,12 @@ def plot_pairwise_uncertainties(FIMs, theta_labels, theta_hat, n_std):
             scale_y = np.sqrt(cov[1, 1]) * n_std
 
             # transforming ellipse
-            transf = transforms.Affine2D() \
-                .rotate_deg(45) \
-                .scale(scale_x, scale_y) \
+            transf = (
+                transforms.Affine2D()
+                .rotate_deg(45)
+                .scale(scale_x, scale_y)
                 .translate(theta_hat[i], theta_hat[j])
+            )
 
             # Plot ellipse
             ax = plt.gca()
@@ -148,8 +169,17 @@ def plot_pairwise_uncertainties(FIMs, theta_labels, theta_hat, n_std):
                 pearson = cov[0, 1] / np.sqrt(cov[0, 0] * cov[1, 1])
                 ell_radius_x = np.sqrt(1 + pearson)
                 ell_radius_y = np.sqrt(1 - pearson)
-                ellipse = Ellipse((0, 0), width=ell_radius_x * 2, height=ell_radius_y * 2,
-                                  edgecolor='red', linestyle='--', hatch='+', lw=3, facecolor=(0.8, 0.8, 0.8), alpha=0.7)
+                ellipse = Ellipse(
+                    (0, 0),
+                    width=ell_radius_x * 2,
+                    height=ell_radius_y * 2,
+                    edgecolor='red',
+                    linestyle='--',
+                    hatch='+',
+                    lw=3,
+                    facecolor=(0.8, 0.8, 0.8),
+                    alpha=0.7,
+                )
 
                 # Plot theta estimate
                 plt.scatter(theta_hat[i], theta_hat[j], color='k', s=20)
@@ -163,10 +193,12 @@ def plot_pairwise_uncertainties(FIMs, theta_labels, theta_hat, n_std):
                 scale_y = np.sqrt(cov[1, 1]) * n_std
 
                 # transforming ellipse
-                transf = transforms.Affine2D() \
-                    .rotate_deg(45) \
-                    .scale(scale_x, scale_y) \
+                transf = (
+                    transforms.Affine2D()
+                    .rotate_deg(45)
+                    .scale(scale_x, scale_y)
                     .translate(theta_hat[i], theta_hat[j])
+                )
 
                 # Plot ellipse
                 ax = plt.gca()
@@ -216,8 +248,15 @@ def plot_pairwise_uncertainties(FIMs, theta_labels, theta_hat, n_std):
                 pearson = cov[0, 1] / np.sqrt(cov[0, 0] * cov[1, 1])
                 ell_radius_x = np.sqrt(1 + pearson)
                 ell_radius_y = np.sqrt(1 - pearson)
-                ellipse = Ellipse((0, 0), width=ell_radius_x * 2, height=ell_radius_y * 2,
-                                  edgecolor='k', lw=3, facecolor=(0.4, 0.4, 0.4), alpha=0.7)
+                ellipse = Ellipse(
+                    (0, 0),
+                    width=ell_radius_x * 2,
+                    height=ell_radius_y * 2,
+                    edgecolor='k',
+                    lw=3,
+                    facecolor=(0.4, 0.4, 0.4),
+                    alpha=0.7,
+                )
 
                 print(i, j, pearson)
 
@@ -233,10 +272,12 @@ def plot_pairwise_uncertainties(FIMs, theta_labels, theta_hat, n_std):
                 scale_y = np.sqrt(cov[1, 1]) * n_std
 
                 # transforming ellipse
-                transf = transforms.Affine2D() \
-                    .rotate_deg(45) \
-                    .scale(scale_x, scale_y) \
+                transf = (
+                    transforms.Affine2D()
+                    .rotate_deg(45)
+                    .scale(scale_x, scale_y)
                     .translate(theta_hat[i], theta_hat[j])
+                )
 
                 # Plot ellipse
                 ax = plt.gca()
@@ -255,12 +296,36 @@ def plot_pairwise_uncertainties(FIMs, theta_labels, theta_hat, n_std):
     if len(FIMs) == 3:
         # Add legend
         ellipse_legend = [
-            Patch(edgecolor='gray', facecolor=(0.5, 0.8, 0.9), alpha=0.5, label='Original Experiments'),
-            Patch(edgecolor='k', lw=3, facecolor=(0.4, 0.4, 0.4), alpha=0.7, label='With Optimal Experiment'),
-            Patch(edgecolor='red', linestyle='--', hatch='+', lw=3, facecolor=(0.8, 0.8, 0.8), alpha=0.7, label='With Model-Free Experiment')
+            Patch(
+                edgecolor='gray',
+                facecolor=(0.5, 0.8, 0.9),
+                alpha=0.5,
+                label='Original Experiments',
+            ),
+            Patch(
+                edgecolor='k',
+                lw=3,
+                facecolor=(0.4, 0.4, 0.4),
+                alpha=0.7,
+                label='With Optimal Experiment',
+            ),
+            Patch(
+                edgecolor='red',
+                linestyle='--',
+                hatch='+',
+                lw=3,
+                facecolor=(0.8, 0.8, 0.8),
+                alpha=0.7,
+                label='With Model-Free Experiment',
+            ),
         ]
 
-        fig.legend(handles=ellipse_legend, loc='upper right', bbox_to_anchor=(0.9, 0.9), fontsize=24)
+        fig.legend(
+            handles=ellipse_legend,
+            loc='upper right',
+            bbox_to_anchor=(0.9, 0.9),
+            fontsize=24,
+        )
 
     plt.tight_layout()
 
@@ -286,11 +351,12 @@ design_ranges = {
 }
 
 # Data from parmest best estimate:
-theta_hat = {"fs.Lp": 2.97e-7,
-             "fs.constant_sieving_coeff[Li]": 1.33,
-             "fs.constant_sieving_coeff[Co]": 0.49,
-             "fs.ionic_strength_coeff[Li]": 5.14e-4,
-             "fs.ionic_strength_coeff[Co]": 1.34e-4
+theta_hat = {
+    "fs.Lp": 2.97e-7,
+    "fs.constant_sieving_coeff[Li]": 1.33,
+    "fs.constant_sieving_coeff[Co]": 0.49,
+    "fs.ionic_strength_coeff[Li]": 5.14e-4,
+    "fs.ionic_strength_coeff[Co]": 1.34e-4,
 }
 
 # Default design
@@ -306,7 +372,9 @@ membrane_design["C_Li_Co_prdt (kg/m^3)"] = 0.692
 membrane_design["C_Li_Li_prdt (kg/m^3)"] = 1.740
 membrane_design["C_Co_Li_prdt (kg/m^3)"] = 3.087
 
-prior_data_df = pd.read_csv(os.path.join("medium_fidelity", "membrane_cascade_data.csv"))
+prior_data_df = pd.read_csv(
+    os.path.join("medium_fidelity", "membrane_cascade_data.csv")
+)
 
 # Make prior
 for i in range(4):
@@ -348,17 +416,12 @@ ms_contactor_DoE = DesignOfExperiments(
 FIM_center = ms_contactor_DoE.compute_FIM(method='sequential')
 
 # Estimate experiments for all conditions
-objective_options = [
-        "determinant",
-        "trace",
-        "minimum_eigenvalue",
-        "condition_number",
-    ]
+objective_options = ["determinant", "trace", "minimum_eigenvalue", "condition_number"]
 
-optimal_points = [0, ] * 4
-optimal_FIMs = [0, ] * 4
-optimal_FIMs_round_2 = [0, ] * 4
-optimal_points_round_2 = [0, ] * 4
+optimal_points = [0] * 4
+optimal_FIMs = [0] * 4
+optimal_FIMs_round_2 = [0] * 4
+optimal_points_round_2 = [0] * 4
 optimal_objective_value = 0
 
 # Define our own grey box solver
@@ -366,7 +429,13 @@ grey_box_solver = pyo.SolverFactory("cyipopt")
 grey_box_solver.config.options["linear_solver"] = "ma57"
 grey_box_solver.config.options['mu_strategy'] = "monotone"
 
-theta_labels = [r"$L_p$", r"$\bar{S}_{1}$", r"$\bar{S}_{2}$", r"$\delta_{1}$", r"$\delta_{2}$"]
+theta_labels = [
+    r"$L_p$",
+    r"$\bar{S}_{1}$",
+    r"$\bar{S}_{2}$",
+    r"$\delta_{1}$",
+    r"$\delta_{2}$",
+]
 
 # Plotting original correlation matrix
 plot_correlation_matrix(FIM_prior, theta_labels)
@@ -379,16 +448,16 @@ for ind, objective_option in enumerate(objective_options):
     experiment = MembraneExperiment(data=membrane_design, theta=theta_hat)
 
     ms_contactor_DoE = DesignOfExperiments(
-            experiment,
-            step=1e-2,
-            objective_option=objective_option,
-            use_grey_box_objective=True,
-            scale_constant_value=1,
-            scale_nominal_param_value=True,
-            prior_FIM=FIM_prior,
-            grey_box_solver=grey_box_solver,
-            grey_box_tee=True,
-        )
+        experiment,
+        step=1e-2,
+        objective_option=objective_option,
+        use_grey_box_objective=True,
+        scale_constant_value=1,
+        scale_nominal_param_value=True,
+        prior_FIM=FIM_prior,
+        grey_box_solver=grey_box_solver,
+        grey_box_tee=True,
+    )
 
     ms_contactor_DoE.run_doe()
 
@@ -398,12 +467,16 @@ for ind, objective_option in enumerate(objective_options):
     optimal_points[ind] = ms_contactor_DoE.results["Experiment Design"]
 
     plot_correlation_matrix(optimal_FIMs[ind], theta_labels)
-    plt.savefig("membrane_correlation_matrix_after_optimal_experiment_{}.png".format(objective_option))
+    plt.savefig(
+        "membrane_correlation_matrix_after_optimal_experiment_{}.png".format(
+            objective_option
+        )
+    )
     plt.clf()
     plt.close()
 
     if objective_option == "minimum_eigenvalue":
-        #ms_contactor_DoE.model.scenario_blocks[0].fs.stage3.pprint()
+        # ms_contactor_DoE.model.scenario_blocks[0].fs.stage3.pprint()
         ms_contactor_DoE.model.scenario_blocks[0].fs.stage1.osmotic_pressure.pprint()
         ms_contactor_DoE.model.scenario_blocks[0].fs.stage2.osmotic_pressure.pprint()
         ms_contactor_DoE.model.scenario_blocks[0].fs.stage3.osmotic_pressure.pprint()
@@ -433,24 +506,37 @@ for ind, objective_option in enumerate(objective_options):
     optimal_points_round_2[ind] = ms_contactor_DoE_2.results["Experiment Design"]
 
 # theta_labels = [r"$L_p$", r"$\bar{S}_{\text{Li}^{+}}$", r"$\bar{S}_{\text{Co}^{2+}}$", r"$\delta_{\text{Li}^{+}}$", r"$\delta_{\text{Co}^{2+}}$"]
-theta_labels = [r"$L_p$", r"$\bar{S}_{1}$", r"$\bar{S}_{2}$", r"$\delta_{1}$", r"$\delta_{2}$"]
-theta_values = [2.97e-7, 1.33, 0.49, 0.000514, 1.34e-4]# 0.00000626]
-#theta_values = theta_hat.values()
+theta_labels = [
+    r"$L_p$",
+    r"$\bar{S}_{1}$",
+    r"$\bar{S}_{2}$",
+    r"$\delta_{1}$",
+    r"$\delta_{2}$",
+]
+theta_values = [2.97e-7, 1.33, 0.49, 0.000514, 1.34e-4]  # 0.00000626]
+# theta_values = theta_hat.values()
 
 plot_correlation_matrix(FIM_prior + FIM_center, theta_labels)
 plt.savefig("membrane_correlation_matrix_prior_and_model_free.png")
 plt.clf()
 plt.close()
 
-plot_pairwise_uncertainties([FIM_prior, optimal_FIMs[2], FIM_prior + FIM_center], theta_labels, theta_values, n_std=1)
+plot_pairwise_uncertainties(
+    [FIM_prior, optimal_FIMs[2], FIM_prior + FIM_center],
+    theta_labels,
+    theta_values,
+    n_std=1,
+)
 plt.savefig("uncertainty_reduction_with_proposed_experiment.png")
 plt.show()
 
-plot_pairwise_uncertainties([FIM_prior, optimal_FIMs[2]], theta_labels, theta_values, n_std=1)
+plot_pairwise_uncertainties(
+    [FIM_prior, optimal_FIMs[2]], theta_labels, theta_values, n_std=1
+)
 plt.savefig("uncertainty_reduction.png")
 plt.show()
 
-plot_pairwise_uncertainties([FIM_prior, ], theta_labels, theta_values, n_std=1)
+plot_pairwise_uncertainties([FIM_prior], theta_labels, theta_values, n_std=1)
 plt.savefig("only_prior_uncertainty_comparison.png")
 plt.show()
 
@@ -480,8 +566,8 @@ for diafiltrate_flow in design_ranges["diafiltrate_flow"]:
         data_feed_flow.append(feed_flow)
         data_diafiltrate_flow.append(diafiltrate_flow)
 
-        membrane_design["C_Li_feed (kg/m^3)"] = 2.
-        membrane_design["C_Co_feed (kg/m^3)"] = 20.
+        membrane_design["C_Li_feed (kg/m^3)"] = 2.0
+        membrane_design["C_Co_feed (kg/m^3)"] = 20.0
         membrane_design["Q_feed (m^3/hr)"] = feed_flow
         membrane_design["Q_diaf (m^3/hr)"] = diafiltrate_flow
 
@@ -561,7 +647,7 @@ data_A = np.zeros((len(FIM_metrics), 3))
 data_A[:, 1] = data_feed_flow
 data_A[:, 0] = data_diafiltrate_flow
 data_A[:, 2] = FIM_metrics_np[:, 0]
-#data_A[:, 2] = np.asarray([i for i in range(len(data_feed_flow))])
+# data_A[:, 2] = np.asarray([i for i in range(len(data_feed_flow))])
 
 plot_heatmap(data_A, "A-optimality", y_label, x_label, r"trace(FIM$^{-1}$)")
 plt.tight_layout()

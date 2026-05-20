@@ -124,21 +124,21 @@ def rooney_biegler_sensitivity():
     j, i = get_row_col(i_tot, 2, 3)
     ax[j, i].plot(time_vals, det_vals)
     ax[j, i].set_title("D-opt")
-    #ax[j, i].set_xlabel("Sample Time (days)")
+    # ax[j, i].set_xlabel("Sample Time (days)")
     ax[j, i].grid()
     i_tot += 1
 
     j, i = get_row_col(i_tot, 2, 3)
     ax[j, i].plot(time_vals, min_eig_vals)
     ax[j, i].set_title("E-opt")
-    #ax[j, i].set_xlabel("Sample Time (days)")
+    # ax[j, i].set_xlabel("Sample Time (days)")
     ax[j, i].grid()
     i_tot += 1
 
     j, i = get_row_col(i_tot, 2, 3)
     ax[j, i].plot(time_vals, max_eig_vals)
     ax[j, i].set_title("Maximum eigenvalue")
-    #ax[j, i].set_xlabel("Sample Time (days)")
+    # ax[j, i].set_xlabel("Sample Time (days)")
     ax[j, i].grid()
     i_tot += 1
 

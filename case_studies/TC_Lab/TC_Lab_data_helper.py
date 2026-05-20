@@ -77,17 +77,17 @@ def plot_pairwise_uncertainties(FIMs, theta_labels, theta_hat, n_std, add_legend
 
     n = len(theta_labels)
 
-    fig, ax = plt.subplots(ncols=n-1, nrows=n-1, figsize=(n*4, n*2.5))
+    fig, ax = plt.subplots(ncols=n - 1, nrows=n - 1, figsize=(n * 4, n * 2.5))
 
-    for ind1, i in enumerate(range(0, n-1)):
+    for ind1, i in enumerate(range(0, n - 1)):
         # Loop over columns -- subdiagonal
         for ind2, j in enumerate(range(1, n)):
             curr_subplot = ind1 + (n - 1) * ind2 + 1
             if ind1 > ind2:
-                plt.subplot(n-1, n-1, curr_subplot).remove()
+                plt.subplot(n - 1, n - 1, curr_subplot).remove()
                 continue
             # Create subplots below the diagonal
-            plt.subplot(n-1, n-1, curr_subplot)
+            plt.subplot(n - 1, n - 1, curr_subplot)
 
             # Plot theta estimate
             plt.scatter(theta_hat[i], theta_hat[j], s=10)
@@ -110,8 +110,15 @@ def plot_pairwise_uncertainties(FIMs, theta_labels, theta_hat, n_std, add_legend
             pearson = cov[0, 1] / np.sqrt(cov[0, 0] * cov[1, 1])
             ell_radius_x = np.sqrt(1 + pearson)
             ell_radius_y = np.sqrt(1 - pearson)
-            ellipse = Ellipse((0, 0), width=ell_radius_x * 2, height=ell_radius_y * 2,
-                              edgecolor='k', lw=3, facecolor=(0.5, 0.8, 0.9), alpha=0.5)
+            ellipse = Ellipse(
+                (0, 0),
+                width=ell_radius_x * 2,
+                height=ell_radius_y * 2,
+                edgecolor='k',
+                lw=3,
+                facecolor=(0.5, 0.8, 0.9),
+                alpha=0.5,
+            )
 
             # Calculating the standard deviation of x from
             # the squareroot of the variance and multiplying
@@ -122,10 +129,12 @@ def plot_pairwise_uncertainties(FIMs, theta_labels, theta_hat, n_std, add_legend
             scale_y = np.sqrt(cov[1, 1]) * n_std
 
             # transforming ellipse
-            transf = transforms.Affine2D() \
-                .rotate_deg(45) \
-                .scale(scale_x, scale_y) \
+            transf = (
+                transforms.Affine2D()
+                .rotate_deg(45)
+                .scale(scale_x, scale_y)
                 .translate(theta_hat[i], theta_hat[j])
+            )
 
             # Plot ellipse
             ax = plt.gca()
@@ -173,9 +182,17 @@ def plot_pairwise_uncertainties(FIMs, theta_labels, theta_hat, n_std, add_legend
                 pearson = cov[0, 1] / np.sqrt(cov[0, 0] * cov[1, 1])
                 ell_radius_x = np.sqrt(1 + pearson)
                 ell_radius_y = np.sqrt(1 - pearson)
-                ellipse = Ellipse((0, 0), width=ell_radius_x * 2, height=ell_radius_y * 2,
-                                  edgecolor='red', linestyle='--', hatch='+', lw=3, facecolor=(0.8, 0.8, 0.8),
-                                  alpha=0.7)
+                ellipse = Ellipse(
+                    (0, 0),
+                    width=ell_radius_x * 2,
+                    height=ell_radius_y * 2,
+                    edgecolor='red',
+                    linestyle='--',
+                    hatch='+',
+                    lw=3,
+                    facecolor=(0.8, 0.8, 0.8),
+                    alpha=0.7,
+                )
 
                 # Plot theta estimate
                 plt.scatter(theta_hat[i], theta_hat[j], color='k', s=20)
@@ -189,10 +206,12 @@ def plot_pairwise_uncertainties(FIMs, theta_labels, theta_hat, n_std, add_legend
                 scale_y = np.sqrt(cov[1, 1]) * n_std
 
                 # transforming ellipse
-                transf = transforms.Affine2D() \
-                    .rotate_deg(45) \
-                    .scale(scale_x, scale_y) \
+                transf = (
+                    transforms.Affine2D()
+                    .rotate_deg(45)
+                    .scale(scale_x, scale_y)
                     .translate(theta_hat[i], theta_hat[j])
+                )
 
                 # Plot ellipse
                 ax = plt.gca()
@@ -210,7 +229,7 @@ def plot_pairwise_uncertainties(FIMs, theta_labels, theta_hat, n_std, add_legend
 
     if len(FIMs) > 1:
         cov_mat_after = np.linalg.pinv(FIMs[1])
-        for ind1, i in enumerate(range(0, n-1)):
+        for ind1, i in enumerate(range(0, n - 1)):
             # Loop over columns -- subdiagonal
             for ind2, j in enumerate(range(1, n)):
                 curr_subplot = ind1 + (n - 1) * ind2 + 1
@@ -241,8 +260,15 @@ def plot_pairwise_uncertainties(FIMs, theta_labels, theta_hat, n_std, add_legend
                 pearson = cov[0, 1] / np.sqrt(cov[0, 0] * cov[1, 1])
                 ell_radius_x = np.sqrt(1 + pearson)
                 ell_radius_y = np.sqrt(1 - pearson)
-                ellipse = Ellipse((0, 0), width=ell_radius_x * 2, height=ell_radius_y * 2,
-                                  edgecolor='k', lw=3, facecolor=(0.4, 0.4, 0.4), alpha=0.7)
+                ellipse = Ellipse(
+                    (0, 0),
+                    width=ell_radius_x * 2,
+                    height=ell_radius_y * 2,
+                    edgecolor='k',
+                    lw=3,
+                    facecolor=(0.4, 0.4, 0.4),
+                    alpha=0.7,
+                )
 
                 # Plot theta estimate
                 plt.scatter(theta_hat[i], theta_hat[j], color='k', s=20)
@@ -256,10 +282,12 @@ def plot_pairwise_uncertainties(FIMs, theta_labels, theta_hat, n_std, add_legend
                 scale_y = np.sqrt(cov[1, 1]) * n_std
 
                 # transforming ellipse
-                transf = transforms.Affine2D() \
-                    .rotate_deg(45) \
-                    .scale(scale_x, scale_y) \
+                transf = (
+                    transforms.Affine2D()
+                    .rotate_deg(45)
+                    .scale(scale_x, scale_y)
                     .translate(theta_hat[i], theta_hat[j])
+                )
 
                 # Plot ellipse
                 ax = plt.gca()
@@ -276,23 +304,61 @@ def plot_pairwise_uncertainties(FIMs, theta_labels, theta_hat, n_std, add_legend
 
         if add_legend and len(FIMs) == 2:
             ellipse_legend = [
-                Patch(edgecolor='gray', facecolor=(0.5, 0.8, 0.9), alpha=0.5, label='Original Experiments'),
-                Patch(edgecolor='k', lw=3, facecolor=(0.4, 0.4, 0.4), alpha=0.7, label='With Optimal Experiment'),
+                Patch(
+                    edgecolor='gray',
+                    facecolor=(0.5, 0.8, 0.9),
+                    alpha=0.5,
+                    label='Original Experiments',
+                ),
+                Patch(
+                    edgecolor='k',
+                    lw=3,
+                    facecolor=(0.4, 0.4, 0.4),
+                    alpha=0.7,
+                    label='With Optimal Experiment',
+                ),
             ]
 
-            fig.legend(handles=ellipse_legend, loc='upper right', bbox_to_anchor=(0.9, 0.9), fontsize=24)
-
+            fig.legend(
+                handles=ellipse_legend,
+                loc='upper right',
+                bbox_to_anchor=(0.9, 0.9),
+                fontsize=24,
+            )
 
     if len(FIMs) == 3:
         if add_legend:
             ellipse_legend = [
-                Patch(edgecolor='gray', facecolor=(0.5, 0.8, 0.9), alpha=0.5, label='Original Experiments'),
-                Patch(edgecolor='k', lw=3, facecolor=(0.4, 0.4, 0.4), alpha=0.7, label='With Optimal Experiment'),
-                Patch(edgecolor='red', linestyle='--', hatch='+', lw=3, facecolor=(0.8, 0.8, 0.8), alpha=0.7,
-                      label='With Model-Free Experiment')
+                Patch(
+                    edgecolor='gray',
+                    facecolor=(0.5, 0.8, 0.9),
+                    alpha=0.5,
+                    label='Original Experiments',
+                ),
+                Patch(
+                    edgecolor='k',
+                    lw=3,
+                    facecolor=(0.4, 0.4, 0.4),
+                    alpha=0.7,
+                    label='With Optimal Experiment',
+                ),
+                Patch(
+                    edgecolor='red',
+                    linestyle='--',
+                    hatch='+',
+                    lw=3,
+                    facecolor=(0.8, 0.8, 0.8),
+                    alpha=0.7,
+                    label='With Model-Free Experiment',
+                ),
             ]
 
-            fig.legend(handles=ellipse_legend, loc='upper right', bbox_to_anchor=(1.0, 0.95), fontsize=24)
+            fig.legend(
+                handles=ellipse_legend,
+                loc='upper right',
+                bbox_to_anchor=(1.0, 0.95),
+                fontsize=24,
+            )
 
     plt.tight_layout()
 
@@ -300,7 +366,11 @@ def plot_pairwise_uncertainties(FIMs, theta_labels, theta_hat, n_std, add_legend
 def plot_correlation_matrix(FIM, theta_labels):
     # Compute the correlation matrix from FIM
     cov_M = np.linalg.inv(FIM)
-    corr_M = (np.sqrt(np.diag(1 / np.diag(cov_M)))) @ cov_M @ (np.sqrt(np.diag(1 / np.diag(cov_M))))
+    corr_M = (
+        (np.sqrt(np.diag(1 / np.diag(cov_M))))
+        @ cov_M
+        @ (np.sqrt(np.diag(1 / np.diag(cov_M))))
+    )
 
     im = plt.imshow(corr_M, cmap="RdBu_r")
     plt.xticks([0, 1, 2], theta_labels)
@@ -311,4 +381,12 @@ def plot_correlation_matrix(FIM, theta_labels):
     for i in range(3):
         for j in range(3):
             color = "white" if abs(corr_M[i, j]) > 0.65 else "black"
-            plt.gca().text(j, i, f"{corr_M[i, j]:.3f}", ha="center", va="center", color=color, fontsize=20)
+            plt.gca().text(
+                j,
+                i,
+                f"{corr_M[i, j]:.3f}",
+                ha="center",
+                va="center",
+                color=color,
+                fontsize=20,
+            )

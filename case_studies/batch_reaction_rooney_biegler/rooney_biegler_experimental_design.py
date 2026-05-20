@@ -89,9 +89,7 @@ def run_greybox_optimization():
     grey_box_solver.config.options['mu_strategy'] = "monotone"
 
     for objective_option in objective_options:
-        experiment = RooneyBieglerExperimentDoE(
-            data={'day': 4.5, 'y': 15}
-        )
+        experiment = RooneyBieglerExperimentDoE(data={'day': 4.5, 'y': 15})
 
         doe_obj_gb = DesignOfExperiments(
             experiment,

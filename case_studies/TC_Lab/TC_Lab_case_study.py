@@ -7,7 +7,12 @@ from TC_Lab_experiment import (
     results_summary,
 )
 
-from TC_Lab_data_helper import TC_Lab_data, helper, plot_pairwise_uncertainties, plot_correlation_matrix
+from TC_Lab_data_helper import (
+    TC_Lab_data,
+    helper,
+    plot_pairwise_uncertainties,
+    plot_correlation_matrix,
+)
 
 from TC_Lab_parameter_estimation import TC_Lab_parmest
 
@@ -27,7 +32,13 @@ except:
     pass
 
 
-def run_single_TC_Lab_experiment(include_Th=False, reparam=False, objective_option="determinant", save_plot=False, file_name=None):
+def run_single_TC_Lab_experiment(
+    include_Th=False,
+    reparam=False,
+    objective_option="determinant",
+    save_plot=False,
+    file_name=None,
+):
     # Read in the data
     DATA_DIR = pathlib.Path(__file__).parent
     # file_path = DATA_DIR / "data" / "validation_experiment_env_2_step_50_run_1.csv"
@@ -86,8 +97,13 @@ def run_single_TC_Lab_experiment(include_Th=False, reparam=False, objective_opti
         Tamb=df2['T1'].values[0],
     )
 
-    theta_values = TC_Lab_parmest([file_path, ], generate_Th=False, reparam=reparam,
-                                  CpS_CpH_ratio=CpS_to_CpH_ratio, plot_results=False)
+    theta_values = TC_Lab_parmest(
+        [file_path],
+        generate_Th=False,
+        reparam=reparam,
+        CpS_CpH_ratio=CpS_to_CpH_ratio,
+        plot_results=False,
+    )
 
     if CpS_to_CpH_ratio is not None:
         # Add dummy value for the data object to hold
@@ -163,7 +179,11 @@ def run_single_TC_Lab_experiment(include_Th=False, reparam=False, objective_opti
 
     # Extract the results
     dopt_pyomo_doe_results = extract_plot_results(
-        None, TC_Lab_DoE.model.scenario_blocks[0], save_plot=save_plot, file_name=file_name, reparam=reparam
+        None,
+        TC_Lab_DoE.model.scenario_blocks[0],
+        save_plot=save_plot,
+        file_name=file_name,
+        reparam=reparam,
     )
 
     # Plot the pairwise uncertainties before and after
@@ -172,7 +192,7 @@ def run_single_TC_Lab_experiment(include_Th=False, reparam=False, objective_opti
             "Ua": 0.0408,
             "Ub": 0.0303,
             "inv_CpH": 1 / 5.47,
-            "inv_CpS": 1 / 0.588
+            "inv_CpS": 1 / 0.588,
         }
 
         theta_values_normal_param = theta_values
@@ -195,22 +215,39 @@ def run_single_TC_Lab_experiment(include_Th=False, reparam=False, objective_opti
             print(new_FIM)
             print("\n\n\n\n\n\n\n\n\n\n")
 
-        theta_labels = [r"$\boldsymbol{U_a}$", r"$\boldsymbol{U_b}$", r"$\boldsymbol{Cp_H^{-1}}$",]  # r"$\boldsymbol{Cp_S^{-1}}$"]
+        theta_labels = [
+            r"$\boldsymbol{U_a}$",
+            r"$\boldsymbol{U_b}$",
+            r"$\boldsymbol{Cp_H^{-1}}$",
+        ]  # r"$\boldsymbol{Cp_S^{-1}}$"]
 
         if "inv_CpS" in theta_values_normal_param.keys():
             theta_values_normal_param.pop("inv_CpS")
 
         # Plot the Pairwise Uncertainties
-        plot_pairwise_uncertainties([FIM2, new_FIM], theta_labels, list(theta_values_normal_param.values), n_std=1, add_legend=True)
+        plot_pairwise_uncertainties(
+            [FIM2, new_FIM],
+            theta_labels,
+            list(theta_values_normal_param.values),
+            n_std=1,
+            add_legend=True,
+        )
         plt.savefig("uncertainty_reduction_TC_Lab.png")
         plt.show()
 
-        plot_pairwise_uncertainties([FIM2, ], theta_labels, list(theta_values_normal_param.values), n_std=1)
+        plot_pairwise_uncertainties(
+            [FIM2], theta_labels, list(theta_values_normal_param.values), n_std=1
+        )
         plt.savefig("only_prior_uncertainty_comparison_TC_Lab.png")
         plt.show()
 
-        plot_pairwise_uncertainties([FIM2, new_FIM, FIM + FIM2], theta_labels,
-                                    list(theta_values_normal_param.values), n_std=1, add_legend=True)
+        plot_pairwise_uncertainties(
+            [FIM2, new_FIM, FIM + FIM2],
+            theta_labels,
+            list(theta_values_normal_param.values),
+            n_std=1,
+            add_legend=True,
+        )
         plt.savefig("uncertainty_reduction_TC_Lab_comparison_with_normal_exp.png")
         plt.show()
 
@@ -222,13 +259,23 @@ def run_single_TC_Lab_experiment(include_Th=False, reparam=False, objective_opti
 
 if __name__ == "__main__":
     default_file_name = "optimal_profile_using_{}.png"
-    objective_options = ["determinant", "trace", "minimum_eigenvalue", "condition_number"]
+    objective_options = [
+        "determinant",
+        "trace",
+        "minimum_eigenvalue",
+        "condition_number",
+    ]
     # objective_options = ["determinant", ]
     FIM_results_dict = {i: 0 for i in objective_options}
 
     for objective_option in objective_options:
         # Run the condition
-        temp_FIM, prior2, prior12 = run_single_TC_Lab_experiment(reparam=False, objective_option=objective_option, save_plot=True, file_name=default_file_name.format(objective_option))
+        temp_FIM, prior2, prior12 = run_single_TC_Lab_experiment(
+            reparam=False,
+            objective_option=objective_option,
+            save_plot=True,
+            file_name=default_file_name.format(objective_option),
+        )
 
         # Save the results
         FIM_results_dict[objective_option] = temp_FIM
@@ -240,7 +287,11 @@ if __name__ == "__main__":
     overall_df = pd.DataFrame(columns=objective_options, index=objective_options)
 
     # Labels for correlation matrices
-    theta_labels = [r"$\boldsymbol{U_a}$", r"$\boldsymbol{U_b}$", r"$\boldsymbol{Cp_H^{-1}}$", ]
+    theta_labels = [
+        r"$\boldsymbol{U_a}$",
+        r"$\boldsymbol{U_b}$",
+        r"$\boldsymbol{Cp_H^{-1}}$",
+    ]
 
     # Report data and save optimality conditions to a file
     for objective_option in objective_options:
@@ -263,7 +314,11 @@ if __name__ == "__main__":
 
         # Plot correlation matrix for each experiment
         plot_correlation_matrix(result, theta_labels)
-        plt.savefig("correlation_matrix_after_optimal_experiment_{}.png".format(objective_option))
+        plt.savefig(
+            "correlation_matrix_after_optimal_experiment_{}.png".format(
+                objective_option
+            )
+        )
         plt.clf()
         plt.close()
 
