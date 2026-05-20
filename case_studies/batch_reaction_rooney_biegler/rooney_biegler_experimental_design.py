@@ -37,7 +37,7 @@ def run_greybox_optimization():
     theta = rooney_biegler_parameter_estimation()
 
     # Create a RooneyBiegler Experiment, pass the theta estimate there
-    experiment = RooneyBieglerExperimentDoE(data={'hour': 1.78, 'y': 15}, theta=theta)
+    experiment = RooneyBieglerExperimentDoE(data={'day': 1.78, 'y': 15}, theta=theta)
 
     # Use a central difference, with step size 1e-3
     fd_formula = "central"
@@ -54,7 +54,7 @@ def run_greybox_optimization():
         if i >= int(sys.argv[1]):
             break
         prev_experiment = RooneyBieglerExperimentDoE(
-            data={'hour': data[i][0], 'y': data[i][1]}
+            data={'day': data[i][0], 'y': data[i][1]}
         )
         doe_obj = DesignOfExperiments(
             prev_experiment,
@@ -90,7 +90,7 @@ def run_greybox_optimization():
 
     for objective_option in objective_options:
         experiment = RooneyBieglerExperimentDoE(
-            data={'hour': 4.5, 'y': 15}
+            data={'day': 4.5, 'y': 15}
         )
 
         doe_obj_gb = DesignOfExperiments(
