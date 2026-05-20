@@ -27,6 +27,24 @@ plt.rc('legend', fontsize=SMALL_SIZE)  # legend fontsize
 plt.rc('figure', titlesize=BIGGER_SIZE)  # fontsize of the figure title
 plt.rc('lines', linewidth=3)
 
+
+def plot_correlation_matrix(FIM, theta_labels):
+    # Compute the correlation matrix from FIM
+    cov_M = np.linalg.inv(FIM)
+    corr_M = (np.sqrt(np.diag(1 / np.diag(cov_M)))) @ cov_M @ (np.sqrt(np.diag(1 / np.diag(cov_M))))
+
+    im = plt.imshow(corr_M, cmap="RdBu_r")
+    plt.xticks([0, 1, 2, 3, 4], theta_labels)
+    plt.yticks([0, 1, 2, 3, 4], theta_labels)
+    plt.colorbar(im)
+    plt.tight_layout()
+
+    for i in range(len(theta_labels)):
+        for j in range(len(theta_labels)):
+            color = "white" if abs(corr_M[i, j]) > 0.65 else "black"
+            plt.gca().text(j, i, f"{corr_M[i, j]:.3f}", ha="center", va="center", color=color, fontsize=16)
+
+
 def plot_pairwise_uncertainties(FIMs, theta_labels, theta_hat, n_std):
     cov_mat_before = np.linalg.inv(FIMs[0])
 
@@ -348,6 +366,14 @@ grey_box_solver = pyo.SolverFactory("cyipopt")
 grey_box_solver.config.options["linear_solver"] = "ma57"
 grey_box_solver.config.options['mu_strategy'] = "monotone"
 
+theta_labels = [r"$L_p$", r"$\bar{S}_{1}$", r"$\bar{S}_{2}$", r"$\delta_{1}$", r"$\delta_{2}$"]
+
+# Plotting original correlation matrix
+plot_correlation_matrix(FIM_prior, theta_labels)
+plt.savefig("membrane_correlation_matrix_prior.png")
+plt.clf()
+plt.close()
+
 for ind, objective_option in enumerate(objective_options):
     # Round 1
     experiment = MembraneExperiment(data=membrane_design, theta=theta_hat)
@@ -370,6 +396,11 @@ for ind, objective_option in enumerate(objective_options):
 
     optimal_FIMs[ind] = ms_contactor_DoE.results["FIM"]
     optimal_points[ind] = ms_contactor_DoE.results["Experiment Design"]
+
+    plot_correlation_matrix(optimal_FIMs[ind], theta_labels)
+    plt.savefig("membrane_correlation_matrix_after_optimal_experiment_{}.png".format(objective_option))
+    plt.clf()
+    plt.close()
 
     if objective_option == "minimum_eigenvalue":
         #ms_contactor_DoE.model.scenario_blocks[0].fs.stage3.pprint()
@@ -405,6 +436,11 @@ for ind, objective_option in enumerate(objective_options):
 theta_labels = [r"$L_p$", r"$\bar{S}_{1}$", r"$\bar{S}_{2}$", r"$\delta_{1}$", r"$\delta_{2}$"]
 theta_values = [2.97e-7, 1.33, 0.49, 0.000514, 1.34e-4]# 0.00000626]
 #theta_values = theta_hat.values()
+
+plot_correlation_matrix(FIM_prior + FIM_center, theta_labels)
+plt.savefig("membrane_correlation_matrix_prior_and_model_free.png")
+plt.clf()
+plt.close()
 
 plot_pairwise_uncertainties([FIM_prior, optimal_FIMs[2], FIM_prior + FIM_center], theta_labels, theta_values, n_std=1)
 plt.savefig("uncertainty_reduction_with_proposed_experiment.png")
