@@ -64,3 +64,5 @@ numpy - 2.3.3
 CPython - 3.13.7 on Darwin 19.6.0
 ```
 
+Detailed installation guide for `cyipopt` on Windows is available in `cyipopt_windows_installation_guide.pdf`.
+
